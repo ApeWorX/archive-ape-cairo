@@ -1,6 +1,6 @@
-# <PROJECT_NAME>
+# Ape Cairo
 
-TODO: Description
+Ape compiler plugin around [the Cairo language](https://github.com/starkware-libs/cairo-lang).
 
 ## Dependencies
 
@@ -13,7 +13,7 @@ TODO: Description
 You can install the latest release via [`pip`](https://pypi.org/project/pip/):
 
 ```bash
-pip install <PYPI_NAME>
+pip install ape-cairo
 ```
 
 ### via `setuptools`
@@ -22,13 +22,17 @@ You can clone the repository and use [`setuptools`](https://github.com/pypa/setu
 
 ```bash
 git clone https://github.com/ApeWorX/<PYPI_NAME>.git
-cd <PYPI_NAME>
+cd ape-cairo
 python3 setup.py install
 ```
 
 ## Quick Usage
 
-TODO: Describe library overview in code
+In a project directory where there are `.cairo` files in your `contracts/` directory, run the `compile` command:
+
+```bash
+ape compile
+```
 
 ## Development
 
