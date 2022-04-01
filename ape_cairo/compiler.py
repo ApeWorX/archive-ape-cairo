@@ -39,8 +39,8 @@ class CairoCompiler(CompilerAPI):
             contract_type_data = {
                 "contractName": contract_path.stem,
                 "sourceId": str(get_relative_path(contract_path, base_path)),
-                "deploymentBytecode": {"bytecode": definition.serialize()},
-                "runtimeBytecode": {"bytecode": definition.program.serialize()},
+                "deploymentBytecode": {"bytecode": definition.serialize().hex()},
+                "runtimeBytecode": {"bytecode": definition.program.serialize().hex()},
             }
 
             contract_type = ContractType.parse_obj(contract_type_data)
