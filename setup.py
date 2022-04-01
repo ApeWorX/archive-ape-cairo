@@ -10,7 +10,7 @@ extras_require = {
         "hypothesis>=6.2.0,<7.0",  # Strategy-based fuzzer
     ],
     "lint": [
-        "black>=21.10b0,<22.0",  # auto-formatter and linter
+        "black>=21.12b0,<22.0",  # auto-formatter and linter
         "mypy>=0.910,<1.0",  # Static type analyzer
         "flake8>=3.8.3,<4.0",  # Style linter
         "isort>=5.9.3,<6.0",  # Import sorting linter
@@ -21,8 +21,8 @@ extras_require = {
         "twine",  # Package upload tool
     ],
     "dev": [
-        "commitizen",  # Manage commits and publishing releases
-        "pre-commit",  # Ensure that linters are run prior to commiting
+        "commitizen>=2.19,<2.20",  # Manage commits and publishing releases
+        "pre-commit",  # Ensure that linters are run prior to committing
         "pytest-watch",  # `ptw` test watcher/runner
         "IPython",  # Console for interacting
         "ipdb",  # Debugger (Must use `export PYTHONBREAKPOINT=ipdb.set_trace`)
@@ -53,9 +53,15 @@ setup(
     url="https://github.com/ApeWorX/ape-cairo",
     include_package_data=True,
     install_requires=[
+        "ecdsa",  # Not directly used, but part of install instructions for cairo-lang
+        "fastecdsa",  # Not directly used, but part of install instructions for cairo-lang
+        "sympy",  # Not directly used, but part of install instructions for cairo-lang
+        "cairo-lang>=0.8.0,<0.9",
+        "starknet.py>=0.2.0a0,<0.3.0",
+        "eth-ape>=0.1.3,<0.2",
         "importlib-metadata ; python_version<'3.8'",
     ],  # NOTE: Add 3rd party libraries here
-    python_requires=">=3.7,<4",
+    python_requires=">=3.7.2,<4",
     extras_require=extras_require,
     py_modules=["ape_cairo"],
     license="Apache-2.0",

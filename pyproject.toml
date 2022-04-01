@@ -24,7 +24,7 @@ addopts = """
     --cov-report term
     --cov-report html
     --cov-report xml
-    --cov=<MODULE_NAME>
+    --cov=ape_cairo
 """
 python_files = "test_*.py"
 testpaths = "tests"
@@ -34,10 +34,5 @@ markers = "fuzzing: Run Hypothesis fuzz test suite"
 line_length = 100
 force_grid_wrap = 0
 include_trailing_comma = true
-known_third_party = ["hypothesis"]
-known_first_party = ["ape_cairo"]
 multi_line_output = 3
 use_parentheses = true
-
-[tool.mypy]
-exclude = "build"
