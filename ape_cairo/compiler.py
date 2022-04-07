@@ -40,7 +40,7 @@ class CairoCompiler(CompilerAPI):
                 "contractName": contract_path.stem,
                 "sourceId": str(get_relative_path(contract_path, base_path)),
                 "deploymentBytecode": {"bytecode": definition.serialize().hex()},
-                "runtimeBytecode": {"bytecode": definition.program.serialize().hex()},
+                "runtimeBytecode": {},
                 "abi": definition.abi,
             }
 
