@@ -41,3 +41,13 @@ def clean_cache():
 
     if cache_file.exists():
         cache_file.unlink()
+
+
+@pytest.fixture
+def project():
+    return ape.project
+
+
+@pytest.fixture
+def compiler():
+    return ape.compilers.registered_compilers[".cairo"]

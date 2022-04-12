@@ -36,6 +36,11 @@ class CairoCompiler(CompilerAPI):
 
             definition = ContractDefinition.loads(result_str)
 
+            # Change events' 'data' field to 'inputs'
+            for abi in definition.abi:
+                if abi["type"] == "event" and "data" in abi:
+                    abi["inputs"] = abi.pop("data")
+
             contract_type_data = {
                 "contractName": contract_path.stem,
                 "sourceId": str(get_relative_path(contract_path, base_path)),
