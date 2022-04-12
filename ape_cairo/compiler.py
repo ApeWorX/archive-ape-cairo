@@ -6,7 +6,7 @@ from ape.exceptions import CompilerError
 from ape.utils import get_relative_path
 from ethpm_types import ContractType
 from pkg_resources import get_distribution  # type: ignore
-from starknet_py.utils.compiler.starknet_compile import starknet_compile
+from starknet_py.utils.compiler.starknet_compile import starknet_compile  # type: ignore
 from starkware.starknet.services.api.contract_definition import ContractDefinition  # type: ignore
 
 
@@ -43,7 +43,9 @@ class CairoCompiler(CompilerAPI):
 
             contract_type_data = {
                 "contractName": contract_path.stem,
-                "sourceId": str(get_relative_path(contract_path, base_path)),
+                "sourceId": str(get_relative_path(contract_path, base_path))
+                if base_path
+                else str(contract_path),
                 "deploymentBytecode": {"bytecode": definition.serialize().hex()},
                 "runtimeBytecode": {},
                 "abi": definition.abi,
