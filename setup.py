@@ -59,7 +59,7 @@ setup(
         "cairo-lang>=0.8.0,<0.9",
         "starknet.py>=0.2.0a0,<0.3.0",
         "eth-ape>=0.2.1,<0.3.0",
-        "ethpm-types>=0.1.1,<0.2.0",
+        "ethpm-types>=0.2.0,<0.3.0",
         "importlib-metadata ; python_version<'3.8'",
     ],  # NOTE: Add 3rd party libraries here
     python_requires=">=3.7.2,<4",
