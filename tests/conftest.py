@@ -3,12 +3,19 @@ from pathlib import Path
 
 import ape
 import pytest
+from ape.utils import get_all_files_in_directory
 
 PROJECT_DIRECTORY = Path(__file__).parent
 SOURCE_CODE_DIRECTORY = PROJECT_DIRECTORY / "contracts"
 
+SOURCE_FILES = [
+    Path(str(p).replace(str(SOURCE_CODE_DIRECTORY), "").strip("/"))
+    for p in get_all_files_in_directory(SOURCE_CODE_DIRECTORY)
+]
 
-@pytest.fixture(params=[p.name for p in SOURCE_CODE_DIRECTORY.iterdir()])
+
+# NOTE: Params converted to strings to looks nicer in pytest case outputs
+@pytest.fixture(params=[str(p) for p in SOURCE_FILES])
 def contract(request):
     yield (SOURCE_CODE_DIRECTORY / request.param).absolute()
 

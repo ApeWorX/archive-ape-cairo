@@ -41,11 +41,16 @@ class CairoCompiler(CompilerAPI):
                 if abi["type"] == "event" and "data" in abi:
                     abi["inputs"] = abi.pop("data")
 
+            if base_path:
+                source_id = str(get_relative_path(contract_path, base_path))
+                contract_name = source_id.replace(".cairo", "")
+            else:
+                source_id = str(contract_path)
+                contract_name = contract_path.stem
+
             contract_type_data = {
-                "contractName": contract_path.stem,
-                "sourceId": str(get_relative_path(contract_path, base_path))
-                if base_path
-                else str(contract_path),
+                "contractName": contract_name,
+                "sourceId": source_id,
                 "deploymentBytecode": {"bytecode": definition.serialize().hex()},
                 "runtimeBytecode": {},
                 "abi": definition.abi,

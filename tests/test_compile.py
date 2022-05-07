@@ -1,9 +1,20 @@
-from tests.conftest import SOURCE_CODE_DIRECTORY
+from pathlib import Path
+
+from tests.conftest import SOURCE_CODE_DIRECTORY, SOURCE_FILES
 
 
-def test_compile(compiler, contract, project):
+def test_compile_all_files(compiler, project):
+    source_files = [SOURCE_CODE_DIRECTORY / s for s in SOURCE_FILES]
+    compiler.compile(source_files, base_path=SOURCE_CODE_DIRECTORY)
+    for src_file in SOURCE_FILES:
+        expected = get_expected_contract_type_name(src_file)
+        assert project.get_contract(expected)
+
+
+def test_compile_individual_files(compiler, contract, project):
     compiler.compile([contract], base_path=SOURCE_CODE_DIRECTORY)
-    assert project.get_contract(contract.stem)
+    expected = get_expected_contract_type_name(contract)
+    assert project.get_contract(expected)
 
 
 def test_event_abi_migration(compiler):
@@ -14,3 +25,12 @@ def test_event_abi_migration(compiler):
     assert event_abi.inputs[0].name == "implementation"
     assert event_abi.inputs[0].type == "felt"
     assert not event_abi.inputs[0].indexed
+
+
+def get_expected_contract_type_name(contract_path: Path) -> str:
+    """
+    Converts paths like Path("path/to/base_dir/namespace/library.cairo") -> "namespace.library".
+    """
+    return (
+        str(contract_path).replace(str(SOURCE_CODE_DIRECTORY), "").replace(".cairo", "").strip("/")
+    )
