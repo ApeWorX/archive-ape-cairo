@@ -43,7 +43,7 @@ class CairoCompiler(CompilerAPI):
 
             if base_path:
                 source_id = str(get_relative_path(contract_path, base_path))
-                contract_name = source_id.replace(".cairo", "")
+                contract_name = source_id.replace(".cairo", "").replace(".", "_")
             else:
                 source_id = str(contract_path)
                 contract_name = contract_path.stem

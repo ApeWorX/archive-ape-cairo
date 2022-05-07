@@ -9,12 +9,14 @@ def test_compile_all_files(compiler, project):
     for src_file in SOURCE_FILES:
         expected = get_expected_contract_type_name(src_file)
         assert project.get_contract(expected)
+        assert getattr(project, expected)
 
 
 def test_compile_individual_files(compiler, contract, project):
     compiler.compile([contract], base_path=SOURCE_CODE_DIRECTORY)
     expected = get_expected_contract_type_name(contract)
     assert project.get_contract(expected)
+    assert getattr(project, expected)
 
 
 def test_event_abi_migration(compiler):
@@ -32,5 +34,9 @@ def get_expected_contract_type_name(contract_path: Path) -> str:
     Converts paths like Path("path/to/base_dir/namespace/library.cairo") -> "namespace.library".
     """
     return (
-        str(contract_path).replace(str(SOURCE_CODE_DIRECTORY), "").replace(".cairo", "").strip("/")
+        str(contract_path)
+        .replace(str(SOURCE_CODE_DIRECTORY), "")
+        .replace(".cairo", "")
+        .strip("/")
+        .replace("/", "_")
     )
