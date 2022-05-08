@@ -11,12 +11,18 @@ def test_compile_all_files(compiler, project):
         assert project.get_contract(expected)
         assert getattr(project, expected)
 
+    # Make sure can call compile twice
+    compiler.compile(source_files, base_path=SOURCE_CODE_DIRECTORY)
+
 
 def test_compile_individual_files(compiler, contract, project):
     compiler.compile([contract], base_path=SOURCE_CODE_DIRECTORY)
     expected = get_expected_contract_type_name(contract)
     assert project.get_contract(expected)
     assert getattr(project, expected)
+
+    # Make sure can call compile twice
+    compiler.compile([contract], base_path=SOURCE_CODE_DIRECTORY)
 
 
 def test_event_abi_migration(compiler):
