@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import List, Optional, Set
 
-import click
 from ape.api import CompilerAPI
 from ape.exceptions import CompilerError
 from ape.utils import get_relative_path
@@ -44,8 +43,7 @@ class CairoCompiler(CompilerAPI):
 
             if base_path:
                 source_id = str(get_relative_path(contract_path, base_path))
-                click.echo(f"DEBUG !!! - {source_id}")
-                contract_name = source_id.replace(".cairo", "").replace("/", "_")
+                contract_name = source_id.replace(".cairo", "").replace("/", ".")
             else:
                 source_id = str(contract_path)
                 contract_name = contract_path.stem

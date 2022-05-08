@@ -44,5 +44,5 @@ def get_expected_contract_type_name(contract_path: Path) -> str:
         .replace(str(SOURCE_CODE_DIRECTORY), "")
         .replace(".cairo", "")
         .strip("/")
-        .replace("/", "_")
+        .replace("/", ".")
     )
