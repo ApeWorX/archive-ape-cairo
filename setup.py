@@ -11,7 +11,7 @@ extras_require = {
     ],
     "lint": [
         "black>=22.3.0,<23.0",  # auto-formatter and linter
-        "mypy>=0.910,<1.0",  # Static type analyzer
+        "mypy>=0.950,<1.0",  # Static type analyzer
         "flake8>=3.9.2,<4.0",  # Style linter
         "isort>=5.10.1,<6.0",  # Import sorting linter
     ],
@@ -58,8 +58,8 @@ setup(
         "sympy",  # Not directly used, but part of install instructions for cairo-lang
         "cairo-lang",
         "starknet.py>=0.2.0a0,<0.2.3a0",
-        "eth-ape>=0.2.1,<0.3.0",
-        "ethpm-types>=0.1.1,<0.3.0",
+        "eth-ape>=0.2.4,<0.3.0",
+        "ethpm-types",
         "importlib-metadata ; python_version<'3.8'",
     ],  # NOTE: Add 3rd party libraries here
     python_requires=">=3.7.2,<4",
