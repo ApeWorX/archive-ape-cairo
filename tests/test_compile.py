@@ -14,6 +14,10 @@ def test_compile_all_files(compiler, project):
     # Make sure can call compile twice
     compiler.compile(source_files, base_path=SOURCE_CODE_DIRECTORY)
 
+    # Make sure can actually use dot-access
+    assert project.namespace0.library
+    assert project.namespace1.library
+
 
 def test_compile_individual_files(compiler, contract, project):
     compiler.compile([contract], base_path=SOURCE_CODE_DIRECTORY)

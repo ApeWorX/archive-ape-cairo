@@ -6,7 +6,7 @@ from ape.exceptions import CompilerError
 from ape.utils import get_relative_path
 from ethpm_types import ContractType
 from pkg_resources import get_distribution  # type: ignore
-from starknet_py.utils.compiler.starknet_compile import starknet_compile  # type: ignore
+from starknet_py.compile.compiler import starknet_compile  # type: ignore
 from starkware.starknet.services.api.contract_definition import ContractDefinition  # type: ignore
 
 
