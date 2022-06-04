@@ -7,6 +7,7 @@ from ape.utils import get_relative_path
 from ethpm_types import ContractType, PackageManifest
 from pkg_resources import get_distribution  # type: ignore
 from starknet_py.compile.compiler import StarknetCompilationSource, starknet_compile  # type: ignore
+from starkware.starknet.services.api.contract_definition import ContractDefinition  # type: ignore
 from starkware.starknet.services.api.contract_class import ContractClass  # type: ignore
 
 
@@ -23,6 +24,10 @@ def _has_account_methods(contract_path: Path) -> bool:
     return has_execute and has_validate and has_validate_execute
 
 
+class CairoConfig(PluginConfig):
+    dependencies: List[str] = []
+
+
 class CairoCompiler(CompilerAPI):
     @property
     def name(self) -> str:
@@ -34,7 +39,7 @@ class CairoCompiler(CompilerAPI):
 
     def load_dependencies(self, base_path: Optional[Path] = None):
         _ = self.project_manager.dependencies
-        contracts_path = base_path or self.config_manager.contracts_folder
+        base_path = base_path or self.config_manager.contracts_folder
         packages_folder = self.config_manager.packages_folder
 
         for dependency_item in self.config.dependencies:
@@ -66,7 +71,7 @@ class CairoCompiler(CompilerAPI):
                 packages_folder / dependency_name / version / f"{dependency_name}.json"
             )
             source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
-            destination_base_path = contracts_path / ".cache" / dependency_name / version
+            destination_base_path = base_path / ".cache" / dependency_name / version
 
             if dependency_name not in [d.name for d in self.config_manager.dependencies]:
                 raise ConfigError(f"Dependency '{dependency_item}' not configured.")
@@ -91,7 +96,7 @@ class CairoCompiler(CompilerAPI):
     def compile(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
     ) -> List[ContractType]:
-        contracts_path = base_path or self.project_manager.contracts_folder
+        base_path = base_path or self.project_manager.contracts_folder
 
         # NOTE: still load dependencies even if no contacts in project.
         self.load_dependencies()
@@ -100,27 +105,24 @@ class CairoCompiler(CompilerAPI):
             return []
 
         contract_types = []
-        base_cache_path = contracts_path / ".cache"
-        cached_paths_to_add = []
-        if base_cache_path.is_dir():
-            dependency_folders = (
-                [base_cache_path / p for p in base_cache_path.iterdir() if p.is_dir()]
-                if base_cache_path.is_dir()
-                else []
-            )
-            for dependency_folder in dependency_folders:
-                cached_paths_to_add.extend(
-                    [dependency_folder / p for p in dependency_folder.iterdir() if p.is_dir()]
-                )
+        base_cache_path = base_path / ".cache"
 
-        search_paths = [contracts_path, *cached_paths_to_add]
+        cached_paths_to_add = []
+        dependency_folders = (
+            [base_cache_path / p for p in base_cache_path.iterdir() if p.is_dir()]
+            if base_cache_path.is_dir()
+            else []
+        )
+        for dependency_folder in dependency_folders:
+            cached_paths_to_add.extend(
+                [dependency_folder / p for p in dependency_folder.iterdir() if p.is_dir()]
+            )
+
+        search_paths = [base_path, *cached_paths_to_add]
         for contract_path in contract_filepaths:
             try:
                 source = StarknetCompilationSource(str(contract_path))
-                is_account = _has_account_methods(contract_path)
-                result_str = starknet_compile(
-                    [source], search_paths=search_paths, is_account_contract=is_account
-                )
+                result_str = starknet_compile([source], search_paths=search_paths)
             except ValueError as err:
                 raise CompilerError(f"Failed to compile '{contract_path.name}': {err}") from err
 
@@ -131,7 +133,7 @@ class CairoCompiler(CompilerAPI):
                 if abi["type"] == "event" and "data" in abi:
                     abi["inputs"] = abi.pop("data")
 
-            source_id = str(get_relative_path(contract_path, contracts_path))
+            source_id = str(get_relative_path(contract_path, base_path))
             contract_name = source_id.replace(".cairo", "").replace("/", ".")
             contract_type_data = {
                 "contractName": contract_name,

@@ -55,10 +55,10 @@ setup(
     install_requires=[
         "cairo-lang>=0.10.0,<0.11",
         "starknet.py>=0.5.1a0,<0.6",
-        "eth-ape>=0.4.0,<0.5.0",
+        "eth-ape>=0.5.1,<0.6",
         "ethpm-types",
     ],
-    python_requires=">=3.9.0,<4",
+    python_requires=">=3.8,<3.11",
     extras_require=extras_require,
     py_modules=["ape_cairo"],
     license="Apache-2.0",
@@ -74,6 +74,7 @@ setup(
         "Operating System :: MacOS",
         "Operating System :: POSIX",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
 )
