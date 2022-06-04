@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 
 import ape
@@ -7,10 +8,16 @@ from ape.utils import get_all_files_in_directory
 
 PROJECT_DIRECTORY = Path(__file__).parent
 SOURCE_CODE_DIRECTORY = PROJECT_DIRECTORY / "contracts"
+DEPENDENCY_DIRECTORY = PROJECT_DIRECTORY / "dependency"
+DEPENDENCY_SOURCE_CODE_DIRECTORY = DEPENDENCY_DIRECTORY / "src"
 
 SOURCE_FILES = [
-    Path(str(p).replace(str(SOURCE_CODE_DIRECTORY), "").strip("/"))
-    for p in get_all_files_in_directory(SOURCE_CODE_DIRECTORY)
+    p
+    for p in [
+        Path(str(p).replace(str(SOURCE_CODE_DIRECTORY), "").strip("/"))
+        for p in get_all_files_in_directory(SOURCE_CODE_DIRECTORY)
+    ]
+    if not str(p).startswith(".cache")
 ]
 
 
@@ -40,14 +47,21 @@ def clean_cache():
     Use this fixture to ensure a project
     does not have a cached compilation.
     """
-    cache_file = PROJECT_DIRECTORY / ".build" / "__local__.json"
-    if cache_file.exists():
-        cache_file.unlink()
+    caches = (
+        PROJECT_DIRECTORY / ".build",
+        SOURCE_CODE_DIRECTORY / ".caches",
+        DEPENDENCY_DIRECTORY / ".build",
+        DEPENDENCY_SOURCE_CODE_DIRECTORY / ".cache",
+    )
 
+    def clean():
+        for cache_dir in caches:
+            if cache_dir.is_dir():
+                shutil.rmtree(cache_dir)
+
+    clean()
     yield
-
-    if cache_file.exists():
-        cache_file.unlink()
+    clean()
 
 
 @pytest.fixture
