@@ -24,7 +24,7 @@ class CairoCompiler(CompilerAPI):
         return self.config_manager.get_config("cairo")  # type: ignore
 
     def load_dependencies(self, base_path: Optional[Path] = None):
-        base_path = base_path or self.config_manager.contracts_folder
+        contracts_path = base_path or self.config_manager.contracts_folder
         packages_folder = self.config_manager.packages_folder
 
         for dependency_item in self.config.dependencies:
@@ -35,7 +35,7 @@ class CairoCompiler(CompilerAPI):
                 dependency_name, version = dependency_item.split("@")
 
             dependency_package_folder = packages_folder / dependency_name
-            if version is None:
+            if version is None and dependency_package_folder.is_dir():
                 version_options = [d for d in dependency_package_folder.iterdir() if d.is_dir()]
                 if not version_options:
                     raise ConfigError(f"No versions found for dependency '{dependency_name}'.")
@@ -48,14 +48,15 @@ class CairoCompiler(CompilerAPI):
 
                 version = version_options[0].name
 
-            if version[0].isnumeric():
+            if version and version[0].isnumeric():
                 version = f"v{version}"
 
+            version = version or ""  # For mypy
             source_manifest_path = (
                 packages_folder / dependency_name / version / f"{dependency_name}.json"
             )
             source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
-            destination_base_path = base_path / ".cache" / dependency_name / version
+            destination_base_path = contracts_path / ".cache" / dependency_name / version
 
             if dependency_name not in [d.name for d in self.config_manager.dependencies]:
                 raise ConfigError(f"Dependency '{dependency_item}' not configured.")
@@ -80,7 +81,7 @@ class CairoCompiler(CompilerAPI):
     def compile(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
     ) -> List[ContractType]:
-        base_path = base_path or self.project_manager.contracts_folder
+        contracts_path = base_path or self.project_manager.contracts_folder
 
         # NOTE: still load dependencies even if no contacts in project.
         self.load_dependencies()
@@ -89,20 +90,20 @@ class CairoCompiler(CompilerAPI):
             return []
 
         contract_types = []
-        base_cache_path = base_path / ".cache"
-
+        base_cache_path = contracts_path / ".cache"
         cached_paths_to_add = []
-        dependency_folders = (
-            [base_cache_path / p for p in base_cache_path.iterdir() if p.is_dir()]
-            if base_cache_path.is_dir()
-            else []
-        )
-        for dependency_folder in dependency_folders:
-            cached_paths_to_add.extend(
-                [dependency_folder / p for p in dependency_folder.iterdir() if p.is_dir()]
+        if base_cache_path.is_dir():
+            dependency_folders = (
+                [base_cache_path / p for p in base_cache_path.iterdir() if p.is_dir()]
+                if base_cache_path.is_dir()
+                else []
             )
+            for dependency_folder in dependency_folders:
+                cached_paths_to_add.extend(
+                    [dependency_folder / p for p in dependency_folder.iterdir() if p.is_dir()]
+                )
 
-        search_paths = [base_path, *cached_paths_to_add]
+        search_paths = [contracts_path, *cached_paths_to_add]
         for contract_path in contract_filepaths:
             try:
                 source = StarknetCompilationSource(str(contract_path))
@@ -117,13 +118,8 @@ class CairoCompiler(CompilerAPI):
                 if abi["type"] == "event" and "data" in abi:
                     abi["inputs"] = abi.pop("data")
 
-            if base_path:
-                source_id = str(get_relative_path(contract_path, base_path))
-                contract_name = source_id.replace(".cairo", "").replace("/", ".")
-            else:
-                source_id = str(contract_path)
-                contract_name = contract_path.stem
-
+            source_id = str(get_relative_path(contract_path, contracts_path))
+            contract_name = source_id.replace(".cairo", "").replace("/", ".")
             contract_type_data = {
                 "contractName": contract_name,
                 "sourceId": source_id,
