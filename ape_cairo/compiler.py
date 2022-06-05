@@ -24,6 +24,7 @@ class CairoCompiler(CompilerAPI):
         return self.config_manager.get_config("cairo")  # type: ignore
 
     def load_dependencies(self, base_path: Optional[Path] = None):
+        _ = self.project_manager.dependencies
         contracts_path = base_path or self.config_manager.contracts_folder
         packages_folder = self.config_manager.packages_folder
 

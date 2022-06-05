@@ -1,16 +1,21 @@
-import os
 import shutil
+from distutils.dir_util import copy_tree
 from pathlib import Path
+from tempfile import mkdtemp
 
 import ape
 import pytest
 from ape.utils import get_all_files_in_directory
 
+# NOTE: Ensure that we don't use local paths for these
+ape.config.DATA_FOLDER = Path(mkdtemp()).resolve()
+ape.config.PROJECT_FOLDER = Path(mkdtemp()).resolve()
+
+
 PROJECT_DIRECTORY = Path(__file__).parent
 SOURCE_CODE_DIRECTORY = PROJECT_DIRECTORY / "contracts"
 DEPENDENCY_DIRECTORY = PROJECT_DIRECTORY / "dependency"
 DEPENDENCY_SOURCE_CODE_DIRECTORY = DEPENDENCY_DIRECTORY / "src"
-
 SOURCE_FILES = [
     p
     for p in [
@@ -21,52 +26,35 @@ SOURCE_FILES = [
 ]
 
 
-# NOTE: Params converted to strings to looks nicer in pytest case outputs
-@pytest.fixture(params=[str(p) for p in SOURCE_FILES])
-def contract(request):
-    yield (SOURCE_CODE_DIRECTORY / request.param).absolute()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def in_tests_directory():
-    """
-    Ensures tests are run from 'ape-cairo/tests/' directory.
-    """
-    start_path = Path.cwd()
-    os.chdir(PROJECT_DIRECTORY)
-
-    with ape.config.using_project(PROJECT_DIRECTORY):
-        yield
-
-    os.chdir(start_path)
-
-
-@pytest.fixture(autouse=True)
-def clean_cache():
-    """
-    Use this fixture to ensure a project
-    does not have a cached compilation.
-    """
-    caches = (
-        PROJECT_DIRECTORY / ".build",
-        SOURCE_CODE_DIRECTORY / ".caches",
-        DEPENDENCY_DIRECTORY / ".build",
-        DEPENDENCY_SOURCE_CODE_DIRECTORY / ".cache",
-    )
-
-    def clean():
-        for cache_dir in caches:
-            if cache_dir.is_dir():
-                shutil.rmtree(cache_dir)
-
-    clean()
-    yield
-    clean()
+@pytest.fixture
+def config():
+    return ape.config
 
 
 @pytest.fixture
-def project():
-    return ape.project
+def project(config):
+    caches = (
+        PROJECT_DIRECTORY / ".build",
+        SOURCE_CODE_DIRECTORY / ".cache",
+        DEPENDENCY_DIRECTORY / ".build",
+        DEPENDENCY_SOURCE_CODE_DIRECTORY / ".cache",
+    )
+    for cache in caches:
+        if cache.is_dir():
+            shutil.rmtree(cache)
+
+    project_dest_dir = config.PROJECT_FOLDER / PROJECT_DIRECTORY.name
+    copy_tree(str(PROJECT_DIRECTORY.as_posix()), str(project_dest_dir))
+    with config.using_project(project_dest_dir) as project:
+        yield project
+        if project._project._cache_folder.is_dir():
+            shutil.rmtree(project._project._cache_folder)
+
+
+# NOTE: Params converted to strings to looks nicer in pytest case outputs
+@pytest.fixture(params=[str(p) for p in SOURCE_FILES])
+def contract(request, project):
+    yield (project.contracts_folder / request.param).absolute()
 
 
 @pytest.fixture
