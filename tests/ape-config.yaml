@@ -1,1 +1,10 @@
 contracts_folder: contracts
+
+dependencies:
+  - name: TestDependency
+    local: ./dependency
+    contracts_folder: src
+
+cairo:
+  dependencies:
+    - TestDependency
