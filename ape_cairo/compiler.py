@@ -7,7 +7,7 @@ from ape.utils import get_relative_path
 from ethpm_types import ContractType, PackageManifest
 from pkg_resources import get_distribution  # type: ignore
 from starknet_py.compile.compiler import StarknetCompilationSource, starknet_compile  # type: ignore
-from starkware.starknet.services.api.contract_definition import ContractDefinition  # type: ignore
+from starkware.starknet.services.api.contract_class import ContractClass  # type: ignore
 
 
 class CairoConfig(PluginConfig):
@@ -112,7 +112,7 @@ class CairoCompiler(CompilerAPI):
             except ValueError as err:
                 raise CompilerError(f"Failed to compile '{contract_path.name}': {err}") from err
 
-            definition = ContractDefinition.loads(result_str)
+            definition = ContractClass.loads(result_str)
 
             # Change events' 'data' field to 'inputs'
             for abi in definition.abi:
