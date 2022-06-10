@@ -4,16 +4,16 @@ from setuptools import find_packages, setup  # type: ignore
 
 extras_require = {
     "test": [  # `test` GitHub Action jobs uses this
-        "pytest>=6.0,<7.0",  # Core testing package
+        "pytest",  # Core testing package
         "pytest-xdist",  # multi-process runner
         "pytest-cov",  # Coverage analyzer plugin
-        "hypothesis>=6.2.0,<7.0",  # Strategy-based fuzzer
+        "hypothesis",  # Strategy-based fuzzer
     ],
     "lint": [
-        "black>=22.3.0,<23.0",  # auto-formatter and linter
-        "mypy>=0.960,<1.0",  # Static type analyzer
-        "flake8>=4.0.1,<5.0",  # Style linter
-        "isort>=5.10.1,<6.0",  # Import sorting linter
+        "black",  # auto-formatter and linter
+        "mypy",  # Static type analyzer
+        "flake8",  # Style linter
+        "isort",  # Import sorting linter
     ],
     "release": [  # `release` GitHub Action job uses this
         "setuptools",  # Installation tool
@@ -21,7 +21,7 @@ extras_require = {
         "twine",  # Package upload tool
     ],
     "dev": [
-        "commitizen>=2.19,<2.20",  # Manage commits and publishing releases
+        "commitizen",  # Manage commits and publishing releases
         "pre-commit",  # Ensure that linters are run prior to committing
         "pytest-watch",  # `ptw` test watcher/runner
         "IPython",  # Console for interacting
@@ -53,13 +53,9 @@ setup(
     url="https://github.com/ApeWorX/ape-cairo",
     include_package_data=True,
     install_requires=[
-        "ecdsa",  # Not directly used, but part of install instructions for cairo-lang
-        "fastecdsa",  # Not directly used, but part of install instructions for cairo-lang
-        "sympy",  # Not directly used, but part of install instructions for cairo-lang
-        "cairo-lang",
-        "starknet.py>=0.3.0a0",
-        "eth-ape>=0.2.7,<0.3.0",
-        "ethpm-types",
+        "cairo-lang>=0.9.0",
+        "starknet.py>=0.3.1a0",
+        "eth-ape>=0.2.8",
         "importlib-metadata ; python_version<'3.8'",
     ],  # NOTE: Add 3rd party libraries here
     python_requires=">=3.7.2,<4",
