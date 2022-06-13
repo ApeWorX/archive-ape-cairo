@@ -56,8 +56,8 @@ setup(
         "ecdsa",  # Not directly used, but part of install instructions for cairo-lang
         "fastecdsa",  # Not directly used, but part of install instructions for cairo-lang
         "sympy",  # Not directly used, but part of install instructions for cairo-lang
-        "cairo-lang",
-        "starknet.py>=0.2.3a0,<0.3.0",
+        "cairo-lang>=0.9,<0.10",
+        "starknet.py>=0.3.1a,<0.4",
         "eth-ape>=0.2.7,<0.3.0",
         "ethpm-types",
         "importlib-metadata ; python_version<'3.8'",
