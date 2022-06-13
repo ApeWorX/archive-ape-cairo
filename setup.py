@@ -53,12 +53,9 @@ setup(
     url="https://github.com/ApeWorX/ape-cairo",
     include_package_data=True,
     install_requires=[
-        "ecdsa",  # Not directly used, but part of install instructions for cairo-lang
-        "fastecdsa",  # Not directly used, but part of install instructions for cairo-lang
-        "sympy",  # Not directly used, but part of install instructions for cairo-lang
         "cairo-lang>=0.9,<0.10",
         "starknet.py>=0.3.1a,<0.4",
-        "eth-ape>=0.2.7,<0.3.0",
+        "eth-ape>=0.2.8,<0.3.0",
         "ethpm-types",
         "importlib-metadata ; python_version<'3.8'",
     ],  # NOTE: Add 3rd party libraries here
