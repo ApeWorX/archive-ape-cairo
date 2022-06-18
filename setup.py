@@ -54,11 +54,11 @@ setup(
     include_package_data=True,
     install_requires=[
         "cairo-lang>=0.9,<0.10",
-        "starknet.py>=0.3.2a,<0.4",
+        "starknet.py>=0.3.2a0,<0.4",
         "eth-ape>=0.3.0,<0.4.0",
         "ethpm-types",
         "importlib-metadata ; python_version<'3.8'",
-    ],  # NOTE: Add 3rd party libraries here
+    ],
     python_requires=">=3.7.2,<4",
     extras_require=extras_require,
     py_modules=["ape_cairo"],
