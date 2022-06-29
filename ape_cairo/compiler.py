@@ -16,10 +16,7 @@ class CairoConfig(PluginConfig):
 
 def _has_execute_method(contract_path: Path) -> bool:
     content = Path(contract_path).read_text(encoding="utf-8")
-    return any(
-        line.startswith("func __execute__{")
-        for line in content.splitlines()
-    )
+    return any(line.startswith("func __execute__{") for line in content.splitlines())
 
 
 class CairoCompiler(CompilerAPI):
