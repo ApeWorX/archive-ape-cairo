@@ -14,6 +14,11 @@ class CairoConfig(PluginConfig):
     dependencies: List[str] = []
 
 
+def _has_execute_method(contract_path: Path) -> bool:
+    content = Path(contract_path).read_text(encoding="utf-8")
+    return any(line.startswith("func __execute__{") for line in content.splitlines())
+
+
 class CairoCompiler(CompilerAPI):
     @property
     def name(self) -> str:
@@ -108,7 +113,10 @@ class CairoCompiler(CompilerAPI):
         for contract_path in contract_filepaths:
             try:
                 source = StarknetCompilationSource(str(contract_path))
-                result_str = starknet_compile([source], search_paths=search_paths)
+                is_account = _has_execute_method(contract_path)
+                result_str = starknet_compile(
+                    [source], search_paths=search_paths, is_account_contract=is_account
+                )
             except ValueError as err:
                 raise CompilerError(f"Failed to compile '{contract_path.name}': {err}") from err
 
