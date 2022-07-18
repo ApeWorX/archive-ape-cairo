@@ -54,7 +54,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "cairo-lang>=0.9,<0.10",
-        "starknet.py>=0.3.2a0,<0.4",
+        "starknet.py>=0.4.1a0,<0.5",
         "eth-ape>=0.3.0,<0.4.0",
         "ethpm-types",
         "importlib-metadata ; python_version<'3.8'",
