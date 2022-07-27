@@ -4,7 +4,7 @@ Ape compiler plugin around [the Cairo language](https://github.com/starkware-lib
 
 ## Dependencies
 
-* [python3](https://www.python.org/downloads) version 3.7 or greater, python3-dev
+* [python3](https://www.python.org/downloads) version 3.7.2 or greater, python3-dev
 
 ## Installation
 
@@ -21,7 +21,7 @@ pip install ape-cairo
 You can clone the repository and use [`setuptools`](https://github.com/pypa/setuptools) for the most up-to-date version:
 
 ```bash
-git clone https://github.com/ApeWorX/<PYPI_NAME>.git
+git clone https://github.com/ApeWorX/ape-cairo.git
 cd ape-cairo
 python3 setup.py install
 ```
