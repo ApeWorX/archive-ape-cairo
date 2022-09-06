@@ -14,9 +14,13 @@ class CairoConfig(PluginConfig):
     dependencies: List[str] = []
 
 
-def _has_execute_method(contract_path: Path) -> bool:
+def _has_account_methods(contract_path: Path) -> bool:
     content = Path(contract_path).read_text(encoding="utf-8")
-    return any(line.startswith("func __execute__{") for line in content.splitlines())
+    lines = content.splitlines()
+    has_execute = any(line.startswith("func __execute__{") for line in lines)
+    has_validate = any(line.startswith("func __validate__{") for line in lines)
+    has_validate_execute = any(line.startswith("func __validate_declare__{") for line in lines)
+    return has_execute and has_validate and has_validate_execute
 
 
 class CairoCompiler(CompilerAPI):
@@ -113,7 +117,7 @@ class CairoCompiler(CompilerAPI):
         for contract_path in contract_filepaths:
             try:
                 source = StarknetCompilationSource(str(contract_path))
-                is_account = _has_execute_method(contract_path)
+                is_account = _has_account_methods(contract_path)
                 result_str = starknet_compile(
                     [source], search_paths=search_paths, is_account_contract=is_account
                 )
