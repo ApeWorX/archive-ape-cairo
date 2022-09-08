@@ -33,7 +33,7 @@ def test_compile_individual_files(compiler, contract, project):
 
 
 def test_event_abi_migration(compiler, project):
-    contract_with_event = project.contracts_folder / "oz_proxy_lib.cairo"
+    contract_with_event = project.contracts_folder / "openzeppelin" / "upgrades" / "library.cairo"
     contract_type = compiler.compile([contract_with_event])[0]
     event_abi = [abi for abi in contract_type.abi if abi.type == "event"][0]
     assert len(event_abi.inputs) == 1
