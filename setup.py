@@ -55,7 +55,7 @@ setup(
     install_requires=[
         "cairo-lang>=0.10.0,<0.11",
         "starknet.py>=0.5.1a0,<0.6",
-        "eth-ape>=0.4.5,<0.5.0",
+        "eth-ape>=0.5.0,<0.6.0",
         "ethpm-types",
     ],
     python_requires=">=3.8,<4",
