@@ -55,18 +55,10 @@ setup(
     install_requires=[
         "cairo-lang>=0.10.0,<0.11",
         "starknet.py>=0.5.1a0,<0.6",
-<<<<<<< HEAD
         "eth-ape>=0.5.1,<0.6",
-=======
-        "eth-ape>=0.4.5,<0.5.0",
->>>>>>> 7dc57f9 (chore: uprade cairo lang)
         "ethpm-types",
     ],
-<<<<<<< HEAD
     python_requires=">=3.8,<3.11",
-=======
-    python_requires=">=3.8,<4",
->>>>>>> 7dc57f9 (chore: uprade cairo lang)
     extras_require=extras_require,
     py_modules=["ape_cairo"],
     license="Apache-2.0",
