@@ -7,12 +7,7 @@ from ape.utils import get_relative_path
 from ethpm_types import ContractType, PackageManifest
 from pkg_resources import get_distribution  # type: ignore
 from starknet_py.compile.compiler import StarknetCompilationSource, starknet_compile  # type: ignore
-from starkware.starknet.services.api.contract_definition import ContractDefinition  # type: ignore
 from starkware.starknet.services.api.contract_class import ContractClass  # type: ignore
-
-
-class CairoConfig(PluginConfig):
-    dependencies: List[str] = []
 
 
 def _has_account_methods(contract_path: Path) -> bool:
@@ -122,7 +117,10 @@ class CairoCompiler(CompilerAPI):
         for contract_path in contract_filepaths:
             try:
                 source = StarknetCompilationSource(str(contract_path))
-                result_str = starknet_compile([source], search_paths=search_paths)
+                is_account = _has_account_methods(contract_path)
+                result_str = starknet_compile(
+                    [source], search_paths=search_paths, is_account_contract=is_account
+                )
             except ValueError as err:
                 raise CompilerError(f"Failed to compile '{contract_path.name}': {err}") from err
 
