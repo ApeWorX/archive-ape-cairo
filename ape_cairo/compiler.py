@@ -6,7 +6,7 @@ from ape.exceptions import CompilerError, ConfigError
 from ape.utils import get_relative_path
 from ethpm_types import ContractType, PackageManifest
 from pkg_resources import get_distribution  # type: ignore
-from starknet_py.compile.compiler import StarknetCompilationSource, starknet_compile  # type: ignore
+from starknet_py.compile.compiler import CairoFilename, starknet_compile  # type: ignore
 from starkware.starknet.services.api.contract_class import ContractClass  # type: ignore
 
 
@@ -116,7 +116,7 @@ class CairoCompiler(CompilerAPI):
         search_paths = [base_path, *cached_paths_to_add]
         for contract_path in contract_filepaths:
             try:
-                source = StarknetCompilationSource(str(contract_path))
+                source = CairoFilename(str(contract_path))
                 is_account = _has_account_methods(contract_path)
                 result_str = starknet_compile(
                     [source], search_paths=search_paths, is_account_contract=is_account
