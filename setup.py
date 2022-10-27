@@ -10,10 +10,10 @@ extras_require = {
         "hypothesis>=6.2.0,<7.0",  # Strategy-based fuzzer
     ],
     "lint": [
-        "black>=22.6.0,<23.0",  # auto-formatter and linter
-        "mypy>=0.971,<1.0",  # Static type analyzer
-        "flake8>=4.0.1,<5.0",  # Style linter
-        "isort>=5.10.1,<6.0",  # Import sorting linter
+        "black>=22.10.0",  # auto-formatter and linter
+        "mypy>=0.982",  # Static type analyzer
+        "flake8>=5.0.4",  # Style linter
+        "isort>=5.10.1",  # Import sorting linter
     ],
     "release": [  # `release` GitHub Action job uses this
         "setuptools",  # Installation tool
@@ -53,8 +53,8 @@ setup(
     url="https://github.com/ApeWorX/ape-cairo",
     include_package_data=True,
     install_requires=[
-        "cairo-lang>=0.10.0,<0.11",
-        "starknet.py>=0.6.2a0,<0.7",
+        "cairo-lang>=0.10.1,<0.11",
+        "starknet.py>=0.8.0a0,<0.9",
         "eth-ape>=0.5.1,<0.6",
         "ethpm-types",
     ],
