@@ -5,7 +5,7 @@ from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
 from ape.utils import get_relative_path
 from ethpm_types import ContractType, PackageManifest
-from pkg_resources import get_distribution  # type: ignore
+from pkg_resources import get_distribution
 from starknet_py.compile.compiler import CairoFilename, starknet_compile  # type: ignore
 from starkware.starknet.services.api.contract_class import ContractClass  # type: ignore
 
