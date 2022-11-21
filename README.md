@@ -45,7 +45,7 @@ There are two things you need to add:
 
 For more information on dependencies, [see this guide](https://docs.apeworx.io/ape/stable/userguides/config.html#dependencies).
 
-Your resulting `ape-config.yaml` will look something like:
+Your `ape-config.yaml` will look something like:
 
 ```yaml
 dependencies:
