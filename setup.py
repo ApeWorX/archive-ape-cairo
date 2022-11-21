@@ -11,7 +11,7 @@ extras_require = {
     ],
     "lint": [
         "black>=22.10.0",  # auto-formatter and linter
-        "mypy==0.982",  # Static type analyzer
+        "mypy>=0.991",  # Static type analyzer
         "types-setuptools",  # Needed due to mypy typeshed
         "flake8>=5.0.4",  # Style linter
         "isort>=5.10.1",  # Import sorting linter
@@ -55,8 +55,8 @@ setup(
     include_package_data=True,
     install_requires=[
         "cairo-lang>=0.10.1,<0.11",
-        "starknet.py>=0.9.0a0,<0.10",
-        "eth-ape>=0.5.4,<0.6",
+        "starknet.py>=0.10.0a0,<0.11",
+        "eth-ape>=0.5.5,<0.6",
         "ethpm-types",
     ],
     python_requires=">=3.8,<3.11",
