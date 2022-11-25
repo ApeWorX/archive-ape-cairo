@@ -65,8 +65,13 @@ class CairoCompiler(CompilerAPI):
             source_manifest_path = (
                 packages_folder / dependency_name / version / f"{dependency_name}.json"
             )
-            source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
             destination_base_path = base_path / ".cache" / dependency_name / version
+            if destination_base_path.is_dir() and not source_manifest_path.is_file():
+                # If the cache already exists and there is no dependency manifest file,
+                # assume the cache was created via some other means and skip validation.
+                continue
+
+            source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
 
             if dependency_name not in [d.name for d in self.config_manager.dependencies]:
                 raise ConfigError(f"Dependency '{dependency_item}' not configured.")
