@@ -71,6 +71,9 @@ class CairoCompiler(CompilerAPI):
                 # assume the cache was created via some other means and skip validation.
                 continue
 
+            elif not source_manifest_path.is_file():
+                raise CompilerError(f"Dependency '{dependency_name}={version}' missing.")
+
             source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
 
             if dependency_name not in [d.name for d in self.config_manager.dependencies]:
