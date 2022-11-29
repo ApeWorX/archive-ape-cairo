@@ -54,9 +54,9 @@ setup(
     url="https://github.com/ApeWorX/ape-cairo",
     include_package_data=True,
     install_requires=[
-        "cairo-lang>=0.10.1,<0.11",
-        "starknet.py>=0.10.0a0,<0.11",
-        "eth-ape>=0.5.5,<0.6",
+        "cairo-lang>=0.10.2,<0.11",
+        "starknet.py>=0.10.2a0,<0.11",
+        "eth-ape>=0.5.6,<0.6",
         "ethpm-types",
     ],
     python_requires=">=3.8,<3.11",
