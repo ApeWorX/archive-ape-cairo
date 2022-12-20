@@ -94,20 +94,20 @@ Questions are welcome! If you have any questions regarding ApeWorX, feel free to
 
 ### **FAQ**
 
-[Why am I getting the error message "ArgumentsLengthError"?](https://www.newton.so/view/63a0a2ee5e3e06d5a48065c5)
+- [Why am I getting the error message "ArgumentsLengthError"?](https://www.newton.so/view/63a0a2ee5e3e06d5a48065c5)
 
-[Why am I getting an "account __execute__" error message?](https://www.newton.so/view/63a0a28e1599f98884ef31fb)
+- [Why am I getting an "account \_\_execute\_\_" error message?](https://www.newton.so/view/63a0a28e1599f98884ef31fb)
 
-[Why am I having trouble deploying my Cairo contract?](https://www.newton.so/view/63a0a2455e3e06d5a48065c1)
+- [Why am I having trouble deploying my Cairo contract?](https://www.newton.so/view/63a0a2455e3e06d5a48065c1)
 
-[How can I test on multi-chain with both Starknet and Ethereum?](https://www.newton.so/view/63a09b04bcc5e0167be127e5)
+- [How can I test on multi-chain with both Starknet and Ethereum?](https://www.newton.so/view/63a09b04bcc5e0167be127e5)
 
-[Using ape starknet accounts list](https://www.newton.so/view/63a09ad4bcc5e0167be127e3)
+- [Using ape starknet accounts list](https://www.newton.so/view/63a09ad4bcc5e0167be127e3)
 
-[How do I call an account while trying to test a function?](https://www.newton.so/view/63a09969deac7f54af6b0f92)
+- [How do I call an account while trying to test a function?](https://www.newton.so/view/63a09969deac7f54af6b0f92)
 
-[Why do I need to fund a Starknet account before deploying it?](https://www.newton.so/view/63a09933bcc5e0167be127e1)
+- [Why do I need to fund a Starknet account before deploying it?](https://www.newton.so/view/63a09933bcc5e0167be127e1)
 
-[How do I fund newly created accounts from the ape console?](https://www.newton.so/view/63a097a19edbdf54f701c406)
+- [How do I fund newly created accounts from the ape console?](https://www.newton.so/view/63a097a19edbdf54f701c406)
 
-[Why are the cairo and starknet plugins not installing properly?](https://www.newton.so/view/63a096fc9edbdf54f701c405)
+- [Why are the cairo and starknet plugins not installing properly?](https://www.newton.so/view/63a096fc9edbdf54f701c405)
