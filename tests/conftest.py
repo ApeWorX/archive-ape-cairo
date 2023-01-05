@@ -47,8 +47,8 @@ def project(config):
     copy_tree(str(PROJECT_DIRECTORY.as_posix()), str(project_dest_dir))
     with config.using_project(project_dest_dir) as project:
         yield project
-        if project._project._cache_folder.is_dir():
-            shutil.rmtree(project._project._cache_folder)
+        if project.local_project._cache_folder.is_dir():
+            shutil.rmtree(project.local_project._cache_folder)
 
 
 # NOTE: Params converted to strings to looks nicer in pytest case outputs
