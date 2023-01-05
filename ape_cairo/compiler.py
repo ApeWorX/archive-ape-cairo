@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set, cast
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
 from ape.utils import get_relative_path
 from ethpm_types import ContractType, PackageManifest
 from pkg_resources import get_distribution
+from semantic_version import Version  # type: ignore
 from starknet_py.compile.compiler import CairoFilename, starknet_compile  # type: ignore
 from starkware.starknet.services.api.contract_class import ContractClass  # type: ignore
 
@@ -30,7 +31,19 @@ class CairoCompiler(CompilerAPI):
 
     @property
     def config(self) -> CairoConfig:
-        return self.config_manager.get_config("cairo")  # type: ignore
+        return cast(CairoConfig, self.config_manager.get_config("cairo"))
+
+    def get_compiler_settings(
+        self, contract_filepaths: List[Path], base_path: Optional[Path] = None
+    ) -> Dict[Version, Dict]:
+        settings: Dict[Version, Dict] = {}
+        for version in self.get_versions(contract_filepaths):
+            if version in settings:
+                continue
+
+            settings[version] = {}
+
+        return settings
 
     def load_dependencies(self, base_path: Optional[Path] = None):
         _ = self.project_manager.dependencies
@@ -75,6 +88,7 @@ class CairoCompiler(CompilerAPI):
                 raise CompilerError(f"Dependency '{dependency_name}={version}' missing.")
 
             source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
+            destination_base_path = base_path / ".cache" / dependency_name / version
 
             if dependency_name not in [d.name for d in self.config_manager.dependencies]:
                 raise ConfigError(f"Dependency '{dependency_item}' not configured.")
