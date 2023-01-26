@@ -10,7 +10,7 @@ extras_require = {
         "hypothesis>=6.2.0,<7.0",  # Strategy-based fuzzer
     ],
     "lint": [
-        "black>=22.10.0",  # auto-formatter and linter
+        "black>=22.12.0",  # auto-formatter and linter
         "mypy>=0.991",  # Static type analyzer
         "types-setuptools",  # Needed due to mypy typeshed
         "flake8>=5.0.4",  # Style linter
@@ -59,7 +59,7 @@ setup(
     install_requires=[
         "cairo-lang>=0.10.3,<0.11",
         "starknet_py>=0.14.0a0,<0.15",
-        "eth-ape>=0.5.9,<0.6",
+        "eth-ape>=0.6.0,<0.7",
         "ethpm-types",  # Use same version as eth-ape
     ],
     python_requires=">=3.8,<3.11",
