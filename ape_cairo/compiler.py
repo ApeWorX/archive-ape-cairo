@@ -88,7 +88,6 @@ class CairoCompiler(CompilerAPI):
                 raise CompilerError(f"Dependency '{dependency_name}={version}' missing.")
 
             source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
-            destination_base_path = base_path / ".cache" / dependency_name / version
 
             if dependency_name not in [d.name for d in self.config_manager.dependencies]:
                 raise ConfigError(f"Dependency '{dependency_item}' not configured.")
