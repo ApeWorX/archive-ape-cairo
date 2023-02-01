@@ -87,7 +87,6 @@ class CairoCompiler(CompilerAPI):
             source_manifest_path = packages_folder / dependency_name
 
             if not source_manifest_path.is_dir():
-                breakpoint()
                 raise CompilerError(
                     f"Missing dependency '{dependency_name}' from packages {source_manifest_path}."
                 )
@@ -100,9 +99,7 @@ class CairoCompiler(CompilerAPI):
                 continue
 
             elif not source_manifest_path.is_file():
-                raise CompilerError(
-                    f"Dependency '{dependency_name}={version}' missing {source_manifest_path}."
-                )
+                raise CompilerError(f"Dependency '{dependency_name}={version}' missing.")
 
             source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
 
