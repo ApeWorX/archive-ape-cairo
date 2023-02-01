@@ -46,7 +46,16 @@ class CairoCompiler(CompilerAPI):
         return settings
 
     def load_dependencies(self, base_path: Optional[Path] = None):
-        _ = self.project_manager.dependencies
+        deps = self.project_manager.dependencies
+
+        # Have to re-exact manifests for some reason, maybe because of a bug
+        # in tempfiles. This only affects tests; real projects don't need
+        # this code. I am not sure why. Suddenly, the package just doesn't
+        # exist anymore.
+        for version_map in deps.values():
+            for dep in version_map.values():
+                dep.extract_manifest()
+
         base_path = base_path or self.config_manager.contracts_folder
         packages_folder = self.config_manager.packages_folder
 
@@ -75,9 +84,15 @@ class CairoCompiler(CompilerAPI):
                 version = f"v{version}"
 
             version = version or ""  # For mypy
-            source_manifest_path = (
-                packages_folder / dependency_name / version / f"{dependency_name}.json"
-            )
+            source_manifest_path = packages_folder / dependency_name
+
+            if not source_manifest_path.is_dir():
+                breakpoint()
+                raise CompilerError(
+                    f"Missing dependency '{dependency_name}' from packages {source_manifest_path}."
+                )
+
+            source_manifest_path = source_manifest_path / version / f"{dependency_name}.json"
             destination_base_path = base_path / ".cache" / dependency_name / version
             if destination_base_path.is_dir() and not source_manifest_path.is_file():
                 # If the cache already exists and there is no dependency manifest file,
@@ -85,7 +100,9 @@ class CairoCompiler(CompilerAPI):
                 continue
 
             elif not source_manifest_path.is_file():
-                raise CompilerError(f"Dependency '{dependency_name}={version}' missing.")
+                raise CompilerError(
+                    f"Dependency '{dependency_name}={version}' missing {source_manifest_path}."
+                )
 
             source_manifest = PackageManifest.parse_raw(source_manifest_path.read_text())
 
