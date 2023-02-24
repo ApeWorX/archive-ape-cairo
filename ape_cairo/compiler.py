@@ -3,12 +3,9 @@ from typing import Dict, List, Optional, Set, cast
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
-from ape.utils import get_relative_path
 from ethpm_types import ContractType, PackageManifest
 from pkg_resources import get_distribution
 from semantic_version import Version  # type: ignore
-from starknet_py.compile.compiler import CairoFilename, starknet_compile  # type: ignore
-from starkware.starknet.services.api.contract_class import ContractClass  # type: ignore
 
 
 def _has_account_methods(contract_path: Path) -> bool:
@@ -134,7 +131,7 @@ class CairoCompiler(CompilerAPI):
         if not contract_filepaths:
             return []
 
-        contract_types = []
+        contract_types: List[ContractType] = []
         base_cache_path = base_path / ".cache"
 
         cached_paths_to_add = []
@@ -148,35 +145,40 @@ class CairoCompiler(CompilerAPI):
                 [dependency_folder / p for p in dependency_folder.iterdir() if p.is_dir()]
             )
 
-        search_paths = [base_path, *cached_paths_to_add]
+        # search_paths = [base_path, *cached_paths_to_add]
         for contract_path in contract_filepaths:
-            try:
-                source = CairoFilename(str(contract_path))
-                is_account = _has_account_methods(contract_path)
-                result_str = starknet_compile(
-                    [source], search_paths=search_paths, is_account_contract=is_account
-                )
-            except ValueError as err:
-                raise CompilerError(f"Failed to compile '{contract_path.name}': {err}") from err
+            _ = contract_path  # TODO: Use
 
-            definition = ContractClass.loads(result_str)
+            # TODO: Use `subprocess` module to both check and invoke `sierra-compile` binary
+            #  Then, handle output from process (the sierra code) by forming contract types with it.
 
-            # Change events' 'data' field to 'inputs'
-            for abi in definition.abi:
-                if abi["type"] == "event" and "data" in abi:
-                    abi["inputs"] = abi.pop("data")
+            # try:
+            #     source = CairoFilename(str(contract_path))
+            #     is_account = _has_account_methods(contract_path)
+            #     result_str = starknet_compile(
+            #         [source], search_paths=search_paths, is_account_contract=is_account
+            #     )
+            # except ValueError as err:
+            #     raise CompilerError(f"Failed to compile '{contract_path.name}': {err}") from err
 
-            source_id = str(get_relative_path(contract_path, base_path))
-            contract_name = source_id.replace(".cairo", "").replace("/", ".")
-            contract_type_data = {
-                "contractName": contract_name,
-                "sourceId": source_id,
-                "deploymentBytecode": {"bytecode": definition.serialize().hex()},
-                "runtimeBytecode": {},
-                "abi": definition.abi,
-            }
-
-            contract_type = ContractType.parse_obj(contract_type_data)
-            contract_types.append(contract_type)
+            # definition = ContractClass.loads(result_str)
+            #
+            # # Change events' 'data' field to 'inputs'
+            # for abi in definition.abi:
+            #     if abi["type"] == "event" and "data" in abi:
+            #         abi["inputs"] = abi.pop("data")
+            #
+            # source_id = str(get_relative_path(contract_path, base_path))
+            # contract_name = source_id.replace(".cairo", "").replace("/", ".")
+            # contract_type_data = {
+            #     "contractName": contract_name,
+            #     "sourceId": source_id,
+            #     "deploymentBytecode": {"bytecode": definition.serialize().hex()},
+            #     "runtimeBytecode": {},
+            #     "abi": definition.abi,
+            # }
+            #
+            # contract_type = ContractType.parse_obj(contract_type_data)
+            # contract_types.append(contract_type)
 
         return contract_types

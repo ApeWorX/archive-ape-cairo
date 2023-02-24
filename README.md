@@ -28,11 +28,39 @@ python3 setup.py install
 
 ## Quick Usage
 
+### Installing Binaries
+
+First, you must ensure you have the `sierra-compile` binary in your `$PATH`.
+To obtain Cairo binaries, you can download them from their GitHub (provided there is one for your OS) as well build them yourself.
+
+To build them yourself, first clone the `https://github.com/starkware-libs/cairo` repository.
+Then run:
+
+```bash
+cargo build --release
+```
+
+After that, copy the binaries from `target/release` to a folder that is in your `$PATH`.
+
+```bash
+cp ./target/release/sierra-compile path/in/PATH
+```
+
+Verify you have `sierra-compile` in your `$PATH` by doing:
+
+```bash
+which sierra-compile
+```
+
+### Using the Compiler
+
 In a project directory where there are `.cairo` files in your `contracts/` directory, run the `compile` command:
 
 ```bash
 ape compile
 ```
+
+It should create `ContractType` objects in your `.build/` folder containing the necessary Sierra code for contract declaration.
 
 ### Configure Dependencies
 
