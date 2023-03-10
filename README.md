@@ -5,6 +5,7 @@ Ape compiler plugin around [the Cairo language](https://github.com/starkware-lib
 ## Dependencies
 
 - [python3](https://www.python.org/downloads) version 3.8 or greater, python3-dev
+- [Rust](https://www.rust-lang.org/)
 
 ## Installation
 
@@ -28,22 +29,26 @@ python3 setup.py install
 
 ## Quick Usage
 
-### Installing Binaries
+First, you will need to build the Cairo binaries.
+To do this, clone the Cairo reposition:
 
-First, you must ensure you have the `sierra-compile` binary in your `$PATH`.
-To obtain Cairo binaries, you can download them from their GitHub (provided there is one for your OS) as well build them yourself.
+```sh
+git clone git@github.com:starkware-libs/cairo.git
+cd cairo 
+```
 
-To build them yourself, first clone the `https://github.com/starkware-libs/cairo` repository.
-Then run:
+Then, build the release binaries for your OS:
 
-```bash
+```sh
 cargo build --release
 ```
 
-After that, copy the binaries from `target/release` to a folder that is in your `$PATH`.
+Finally, add the build path to your $PATH.
+**NOTE**: This requires being in the same directory as it when you build it in the Cairo package.
+(You may want to add this to your `.zshrc` / `.bashrc` file):
 
-```bash
-cp ./target/release/sierra-compile path/in/PATH
+```sh
+export PATH=$PATH:$HOME/path/to/cairo/target/release
 ```
 
 Verify you have `sierra-compile` in your `$PATH` by doing:

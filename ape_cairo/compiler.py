@@ -1,3 +1,5 @@
+import json
+import os
 import shutil
 import subprocess
 from functools import cached_property
@@ -6,6 +8,8 @@ from typing import Dict, List, Optional, Set, cast
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
+from ape.utils import get_relative_path
+from eth_utils import to_hex
 from ethpm_types import ContractType, PackageManifest
 from pkg_resources import get_distribution
 from semantic_version import Version  # type: ignore
@@ -14,9 +18,9 @@ from semantic_version import Version  # type: ignore
 def _has_account_methods(contract_path: Path) -> bool:
     content = Path(contract_path).read_text(encoding="utf-8")
     lines = content.splitlines()
-    has_execute = any(line.startswith("func __execute__{") for line in lines)
-    has_validate = any(line.startswith("func __validate__{") for line in lines)
-    has_validate_execute = any(line.startswith("func __validate_declare__{") for line in lines)
+    has_execute = any(line.startswith("fn __execute__(") for line in lines)
+    has_validate = any(line.startswith("fn __validate__(") for line in lines)
+    has_validate_execute = any(line.startswith("fn __validate_declare__(") for line in lines)
     return has_execute and has_validate and has_validate_execute
 
 
@@ -33,13 +37,21 @@ class CairoCompiler(CompilerAPI):
     def config(self) -> CairoConfig:
         return cast(CairoConfig, self.config_manager.get_config("cairo"))
 
+    @property
+    def bin_name(self) -> str:
+        return "starknet-compile"
+
     @cached_property
-    def sierra_compile_bin(self) -> str:
-        path = shutil.which("sierra-compile")
+    def bin(self) -> str:
+        path = shutil.which(self.bin_name)
         if not path:
-            raise CompilerError("`sierra-compile` binary required in $PATH prior to compiling.")
+            raise CompilerError(f"`{self.bin_name}` binary required in $PATH prior to compiling.")
 
         return path
+
+    @property
+    def sierra_output_path(self) -> Path:
+        return self.project_manager.local_project._cache_folder / "sierra"
 
     def get_compiler_settings(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -156,48 +168,44 @@ class CairoCompiler(CompilerAPI):
                 [dependency_folder / p for p in dependency_folder.iterdir() if p.is_dir()]
             )
 
+        self.sierra_output_path.mkdir(parents=True, exist_ok=True)
         # search_paths = [base_path, *cached_paths_to_add]
         for contract_path in contract_filepaths:
-            result = subprocess.call(
-                self.sierra_compile_bin,
-                str(contract_path),
+            popen = subprocess.Popen(
+                [
+                    self.bin,
+                    str(contract_path),
+                    "--replace-ids",
+                    "--allowed-libfuncs-list-name",
+                    "experimental_v0.1.0",
+                ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            breakpoint()
+            output, err = popen.communicate()
+            if err:
+                raise CompilerError(f"Failed to compile '{contract_path}':\n{err.decode('utf8')}.")
 
-            _ = contract_path  # TODO: Use
+            output_str = output.decode("utf8")
+            output_dict = json.loads(output_str)
+            source_id = str(get_relative_path(contract_path, base_path))
+            contract_name = source_id.replace(os.path.sep, ".").replace(".cairo", "")
 
-            # TODO: Use `subprocess` module to both check and invoke `sierra-compile` binary
-            #  Then, handle output from process (the sierra code) by forming contract types with it.
+            # Write out the Sierra program path.
+            # The ContractType represents a link to this artifact.
+            sierra_program_path = self.sierra_output_path / f"{contract_name}.txt"
+            sierra_program_path.unlink(missing_ok=True)
+            sierra_program_path.touch()
+            sierra_program_path.write_text("\n".join(output_dict["sierra_program"]))
 
-            # try:
-            #     source = CairoFilename(str(contract_path))
-            #     is_account = _has_account_methods(contract_path)
-            #     result_str = starknet_compile(
-            #         [source], search_paths=search_paths, is_account_contract=is_account
-            #     )
-            # except ValueError as err:
-            #     raise CompilerError(f"Failed to compile '{contract_path.name}': {err}") from err
+            # TODO: Research what is `sierra_program_debug_info`
 
-            # definition = ContractClass.loads(result_str)
-            #
-            # # Change events' 'data' field to 'inputs'
-            # for abi in definition.abi:
-            #     if abi["type"] == "event" and "data" in abi:
-            #         abi["inputs"] = abi.pop("data")
-            #
-            # source_id = str(get_relative_path(contract_path, base_path))
-            # contract_name = source_id.replace(".cairo", "").replace("/", ".")
-            # contract_type_data = {
-            #     "contractName": contract_name,
-            #     "sourceId": source_id,
-            #     "deploymentBytecode": {"bytecode": definition.serialize().hex()},
-            #     "runtimeBytecode": {},
-            #     "abi": definition.abi,
-            # }
-            #
-            # contract_type = ContractType.parse_obj(contract_type_data)
-            # contract_types.append(contract_type)
+            contract_type = ContractType(
+                abi=output_dict["abi"],
+                contractName=contract_name,
+                sourceId=source_id,
+                deploymentBytecode={"bytecode": to_hex(text=contract_name)},
+            )
+            contract_types.append(contract_type)
 
         return contract_types
