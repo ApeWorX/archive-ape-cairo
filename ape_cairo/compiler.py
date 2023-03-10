@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import subprocess
-from functools import cached_property
 from pathlib import Path
 from typing import Dict, List, Optional, Set, cast
 
@@ -14,14 +13,8 @@ from ethpm_types import ContractType, PackageManifest
 from pkg_resources import get_distribution
 from semantic_version import Version  # type: ignore
 
-
-def _has_account_methods(contract_path: Path) -> bool:
-    content = Path(contract_path).read_text(encoding="utf-8")
-    lines = content.splitlines()
-    has_execute = any(line.startswith("fn __execute__(") for line in lines)
-    has_validate = any(line.startswith("fn __validate__(") for line in lines)
-    has_validate_execute = any(line.startswith("fn __validate_declare__(") for line in lines)
-    return has_execute and has_validate and has_validate_execute
+STARKNET_COMPILE = "starknet-compile"
+STARKNET_SIERRA_COMPILE = "starknet-sierra-compile"
 
 
 class CairoConfig(PluginConfig):
@@ -38,20 +31,38 @@ class CairoCompiler(CompilerAPI):
         return cast(CairoConfig, self.config_manager.get_config("cairo"))
 
     @property
-    def bin_name(self) -> str:
-        return "starknet-compile"
-
-    @cached_property
-    def bin(self) -> str:
-        path = shutil.which(self.bin_name)
-        if not path:
-            raise CompilerError(f"`{self.bin_name}` binary required in $PATH prior to compiling.")
-
-        return path
+    def starknet_output_path(self) -> Path:
+        return self.project_manager.local_project._cache_folder / "starknet"
 
     @property
-    def sierra_output_path(self) -> Path:
-        return self.project_manager.local_project._cache_folder / "sierra"
+    def casm_output_path(self) -> Path:
+        return self.starknet_output_path / "casm"
+
+    def starknet_compile(
+        self,
+        in_path: Path,
+        out_path: Path,
+        replace_ids: bool = False,
+        allow_libfuncs_list_name: Optional[str] = None,
+    ):
+        bin = self._which(STARKNET_COMPILE)
+        arguments = [bin, str(in_path), str(out_path)]
+        if replace_ids:
+            arguments.append("--replace-ids")
+        if allow_libfuncs_list_name is not None:
+            arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
+
+        self._compile(*arguments)
+
+    def starknet_sierra_compile(
+        self, in_path: Path, out_path: Path, allow_libfuncs_list_name: Optional[str] = None
+    ):
+        bin = self._which(STARKNET_SIERRA_COMPILE)
+        arguments = [bin, str(in_path), str(out_path)]
+        if allow_libfuncs_list_name is not None:
+            arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
+
+        self._compile(*arguments)
 
     def get_compiler_settings(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -168,38 +179,26 @@ class CairoCompiler(CompilerAPI):
                 [dependency_folder / p for p in dependency_folder.iterdir() if p.is_dir()]
             )
 
-        self.sierra_output_path.mkdir(parents=True, exist_ok=True)
+        # Create all artifact directories (without assuming one is in another).
+        self.starknet_output_path.mkdir(parents=True, exist_ok=True)
+        self.casm_output_path.mkdir(parents=True, exist_ok=True)
+
         # search_paths = [base_path, *cached_paths_to_add]
         for contract_path in contract_filepaths:
-            popen = subprocess.Popen(
-                [
-                    self.bin,
-                    str(contract_path),
-                    "--replace-ids",
-                    "--allowed-libfuncs-list-name",
-                    "experimental_v0.1.0",
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            output, err = popen.communicate()
-            if err:
-                raise CompilerError(f"Failed to compile '{contract_path}':\n{err.decode('utf8')}.")
-
-            output_str = output.decode("utf8")
-            output_dict = json.loads(output_str)
+            # Store the raw Starknet artifact itself.
             source_id = str(get_relative_path(contract_path, base_path))
             contract_name = source_id.replace(os.path.sep, ".").replace(".cairo", "")
+            program_path = self.starknet_output_path / f"{contract_name}.json"
+            program_path.unlink(missing_ok=True)
 
-            # Write out the Sierra program path.
-            # The ContractType represents a link to this artifact.
-            sierra_program_path = self.sierra_output_path / f"{contract_name}.txt"
-            sierra_program_path.unlink(missing_ok=True)
-            sierra_program_path.touch()
-            sierra_program_path.write_text("\n".join(output_dict["sierra_program"]))
+            self.starknet_compile(
+                contract_path,
+                program_path,
+                replace_ids=True,
+                allow_libfuncs_list_name="experimental_v0.1.0",
+            )
 
-            # TODO: Research what is `sierra_program_debug_info`
-
+            output_dict = json.loads(program_path.read_text())
             contract_type = ContractType(
                 abi=output_dict["abi"],
                 contractName=contract_name,
@@ -208,4 +207,31 @@ class CairoCompiler(CompilerAPI):
             )
             contract_types.append(contract_type)
 
+            # Create the sierra files.
+            casm_path = self.casm_output_path / f"{contract_name}.casm"
+            self.starknet_sierra_compile(
+                program_path, casm_path, allow_libfuncs_list_name="experimental_v0.1.0"
+            )
+
         return contract_types
+
+    def _compile(self, *args) -> bytes:
+        popen = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        output, err = popen.communicate()
+        if err:
+            raise CompilerError(f"Failed to compile:\n{err.decode('utf8')}.")
+
+        return output
+
+    def _which(self, bin_name: str) -> str:
+        bin = shutil.which(bin_name)
+        if not bin:
+            raise CompilerError(
+                f"`{STARKNET_COMPILE}` binary required in $PATH prior to compiling."
+            )
+
+        return bin
