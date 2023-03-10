@@ -1,3 +1,6 @@
+import shutil
+import subprocess
+from functools import cached_property
 from pathlib import Path
 from typing import Dict, List, Optional, Set, cast
 
@@ -29,6 +32,14 @@ class CairoCompiler(CompilerAPI):
     @property
     def config(self) -> CairoConfig:
         return cast(CairoConfig, self.config_manager.get_config("cairo"))
+
+    @cached_property
+    def sierra_compile_bin(self) -> str:
+        path = shutil.which("sierra-compile")
+        if not path:
+            raise CompilerError("`sierra-compile` binary required in $PATH prior to compiling.")
+
+        return path
 
     def get_compiler_settings(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -147,6 +158,14 @@ class CairoCompiler(CompilerAPI):
 
         # search_paths = [base_path, *cached_paths_to_add]
         for contract_path in contract_filepaths:
+            result = subprocess.call(
+                self.sierra_compile_bin,
+                str(contract_path),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            breakpoint()
+
             _ = contract_path  # TODO: Use
 
             # TODO: Use `subprocess` module to both check and invoke `sierra-compile` binary
