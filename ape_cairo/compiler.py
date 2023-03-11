@@ -32,7 +32,7 @@ class CairoCompiler(CompilerAPI):
         if not self.config.manifest:
             return None
 
-        return Path(self.config.manifest).resolve()
+        return Path(self.config.manifest).expanduser().resolve()
 
     @property
     def config(self) -> CairoConfig:
