@@ -29,21 +29,34 @@ python3 setup.py install
 
 ## Quick Usage
 
-First, you will need to build the Cairo binaries.
-To do this, clone the Cairo reposition:
+First, you will need to tell `ape-cairo` how to use the Cairo compiler.
+There are two ways to do this:
+
+1. Configure your Cairo manifest path in your `ape-config.yaml`.
+2. Build or add Cairo compiler binaries to your $PATH.
+
+Both options requires cloning the Cairo compiler source code:
 
 ```sh
 git clone git@github.com:starkware-libs/cairo.git
 cd cairo 
 ```
 
-Then, build the release binaries for your OS:
+To do the first option, add the following to your `ape-config.yaml` file:
+
+```yaml
+cairo:
+  manifest: /Users/home/path/to/cairo/Cargo.toml
+```
+
+Now, when compiling, Ape will use the command `cargo run --bin <BIN> --manifest-path <CAIRO-MANIFEST>`.
+To do the second option instead, build the release binaries for your OS:
 
 ```sh
 cargo build --release
 ```
 
-Finally, add the build path to your $PATH.
+After the build completes, add the target path to your global $PATH variable.
 **NOTE**: This requires being in the same directory as it when you build it in the Cairo package.
 (You may want to add this to your `.zshrc` / `.bashrc` file):
 
@@ -56,6 +69,10 @@ Verify you have `sierra-compile` in your `$PATH` by doing:
 ```bash
 which sierra-compile
 ```
+
+**WARN**: Note that when using Cairo-lang the python package, it will add binaries with the same name but that won't work.
+You will need to remove those manually if they are used instead of the binaries from Cairo 1.
+Alternatively, use the first approach.
 
 ### Using the Compiler
 

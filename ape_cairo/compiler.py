@@ -19,12 +19,20 @@ STARKNET_SIERRA_COMPILE = "starknet-sierra-compile"
 
 class CairoConfig(PluginConfig):
     dependencies: List[str] = []
+    manifest: Optional[str] = None
 
 
 class CairoCompiler(CompilerAPI):
     @property
     def name(self) -> str:
         return "cairo"
+
+    @property
+    def manifest_path(self) -> Optional[Path]:
+        if not self.config.manifest:
+            return None
+
+        return Path(self.config.manifest)
 
     @property
     def config(self) -> CairoConfig:
@@ -45,8 +53,8 @@ class CairoCompiler(CompilerAPI):
         replace_ids: bool = False,
         allow_libfuncs_list_name: Optional[str] = None,
     ):
-        bin = self._which(STARKNET_COMPILE)
-        arguments = [bin, str(in_path), str(out_path)]
+        _bin = self._which(STARKNET_COMPILE)
+        arguments = [*_bin, str(in_path), str(out_path)]
         if replace_ids:
             arguments.append("--replace-ids")
         if allow_libfuncs_list_name is not None:
@@ -57,8 +65,8 @@ class CairoCompiler(CompilerAPI):
     def starknet_sierra_compile(
         self, in_path: Path, out_path: Path, allow_libfuncs_list_name: Optional[str] = None
     ):
-        bin = self._which(STARKNET_SIERRA_COMPILE)
-        arguments = [bin, str(in_path), str(out_path)]
+        _bin = self._which(STARKNET_SIERRA_COMPILE)
+        arguments = [*_bin, str(in_path), str(out_path)]
         if allow_libfuncs_list_name is not None:
             arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
 
@@ -188,9 +196,10 @@ class CairoCompiler(CompilerAPI):
             # Store the raw Starknet artifact itself.
             source_id = str(get_relative_path(contract_path, base_path))
             contract_name = source_id.replace(os.path.sep, ".").replace(".cairo", "")
+
+            # Create Sierra contract classes.
             program_path = self.starknet_output_path / f"{contract_name}.json"
             program_path.unlink(missing_ok=True)
-
             self.starknet_compile(
                 contract_path,
                 program_path,
@@ -198,20 +207,21 @@ class CairoCompiler(CompilerAPI):
                 allow_libfuncs_list_name="experimental_v0.1.0",
             )
 
+            # Create Compiled contract classes.
+            casm_path = self.casm_output_path / f"{contract_name}.casm"
+            self.starknet_sierra_compile(
+                program_path, casm_path, allow_libfuncs_list_name="experimental_v0.1.0"
+            )
+
             output_dict = json.loads(program_path.read_text())
             contract_type = ContractType(
                 abi=output_dict["abi"],
                 contractName=contract_name,
                 sourceId=source_id,
-                deploymentBytecode={"bytecode": to_hex(text=contract_name)},
+                runtimeBytecode={"bytecode": to_hex(text=program_path.read_text())},
+                deploymentBytecode={"bytecode": to_hex(text=str(casm_path.read_text()))},
             )
             contract_types.append(contract_type)
-
-            # Create the sierra files.
-            casm_path = self.casm_output_path / f"{contract_name}.casm"
-            self.starknet_sierra_compile(
-                program_path, casm_path, allow_libfuncs_list_name="experimental_v0.1.0"
-            )
 
         return contract_types
 
@@ -227,11 +237,20 @@ class CairoCompiler(CompilerAPI):
 
         return output
 
-    def _which(self, bin_name: str) -> str:
-        bin = shutil.which(bin_name)
-        if not bin:
+    def _which(self, bin_name: str) -> List[str]:
+        if self.manifest_path is not None:
+            return [
+                "cargo",
+                "run" "--bin",
+                bin_name,
+                "--manifest-path",
+                self.manifest_path.as_posix(),
+            ]
+
+        _bin = shutil.which(bin_name)
+        if not _bin:
             raise CompilerError(
                 f"`{STARKNET_COMPILE}` binary required in $PATH prior to compiling."
             )
 
-        return bin
+        return [_bin]
