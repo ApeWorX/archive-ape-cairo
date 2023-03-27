@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Set, cast
+import logging
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
@@ -160,7 +161,7 @@ class CairoCompiler(CompilerAPI):
 
     def get_versions(self, all_paths: List[Path]) -> Set[str]:
         # NOTE: Currently, we are not doing anything with versions.
-        return {get_distribution("cairo-lang").version}
+        return {get_distribution("eth-ape").version}
 
     def compile(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -233,7 +234,7 @@ class CairoCompiler(CompilerAPI):
         )
         output, err = popen.communicate()
         if err:
-            raise CompilerError(f"Failed to compile:\n{err.decode('utf8')}.")
+            logging.warn(CompilerError(f"Failed to compile:\n{err.decode('utf8')}.")) 
 
         return output
 
@@ -241,7 +242,8 @@ class CairoCompiler(CompilerAPI):
         if self.manifest_path is not None:
             return [
                 "cargo",
-                "run" "--bin",
+                "run",
+                "--bin",
                 bin_name,
                 "--manifest-path",
                 self.manifest_path.as_posix(),

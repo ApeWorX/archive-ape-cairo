@@ -8,4 +8,8 @@ mod Storage {
     #[external]
     fn register_interface(interface_id: felt) {
     }
+
+    #[event]
+    fn event_interface(interface_id: felt){
+    }
 }
