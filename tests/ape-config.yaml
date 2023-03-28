@@ -9,4 +9,4 @@ cairo:
   dependencies:
     - TestDependency
 
-  manifest: "~/cairo/Cargo.toml"
+  manifest: "cairo/Cargo.toml"

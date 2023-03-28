@@ -1,9 +1,11 @@
-// NOTE: This contract is for test purposes only.
-// Its intent is to provide a variety of ABI types to test against.
-%lang starknet
+#[contract]
+mod Dependency {
+    #[view]
+    fn dep_view(interface_id: felt252) -> bool {
+        true
+    }
 
-// Make sure we can compile structs.
-struct DependencyStruct {
-    foo: felt,
-    bar: felt,
+    #[external]
+    fn dep_extern(interface_id: felt252) {
+    }
 }

@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import shutil
 import subprocess
@@ -207,6 +206,8 @@ class CairoCompiler(CompilerAPI):
                 replace_ids=True,
                 allow_libfuncs_list_name="experimental_v0.1.0",
             )
+            if not program_path.is_file():
+                raise CompilerError(f"Failed to compile '{contract_path}'.")
 
             # Create Compiled contract classes.
             casm_path = self.casm_output_path / f"{contract_name}.casm"
@@ -234,7 +235,13 @@ class CairoCompiler(CompilerAPI):
         )
         output, err = popen.communicate()
         if err:
-            logging.warn(CompilerError(f"Failed to compile:\n{err.decode('utf8')}."))
+            # Check for compiler error.
+            err_text = err.decode("utf8")
+
+            # Raise `CompilerError` only if detect failure to compile.
+            # This prevents falsely raising this error during warnings.
+            if "Error: Compilation failed." in err_text:
+                raise CompilerError(f"Failed to compile contract. Full output:\n{err_text}.")
 
         return output
 

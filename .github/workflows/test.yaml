@@ -84,18 +84,10 @@ jobs:
             default: true
             override: true
 
-        - name: Cache Cairo
-          id: cache-cairo
-          uses: actions/cache@v3
-          with:
-            path: $HOME/.local/bin
-            key: ${{ runner.os }}-geth-${{ env.CAIRO_VERSION }}
-
         - name: Clone Cairo
-          if: steps.cache-cairo.outputs.cache-hit != 'true'
           run: |
-            git clone --depth 1 --single-branch https://github.com/starkware-libs/cairo.git
-            pushd cairo
+            git clone tests --depth 1 --single-branch https://github.com/starkware-libs/cairo.git tests/cairo
+            pushd tests/cairo
             git fetch --tags
             git checkout ${{ env.CAIRO_VERSION }}
             popd
