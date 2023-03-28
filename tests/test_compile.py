@@ -37,7 +37,7 @@ def test_event_abi_migration(compiler, contract):
     event_abi = [abi for abi in contract_type.abi if abi.type == "event"][0]
     assert len(event_abi.inputs) == 1
     assert event_abi.inputs[0].name == "interface_id"
-    assert event_abi.inputs[0].type == "core::felt"
+    assert event_abi.inputs[0].type == "core::felt252"
     assert not event_abi.inputs[0].indexed
 
 
