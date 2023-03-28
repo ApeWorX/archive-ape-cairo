@@ -66,6 +66,7 @@ jobs:
                 python-version: [3.8, 3.9]
 
         env:
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CAIRO_VERSION: v1.0.0-alpha.6
 
         steps:
@@ -98,8 +99,6 @@ jobs:
             git fetch --tags
             git checkout ${{ env.CAIRO_VERSION }}
             popd
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
 
         - name: Install Dependencies
           run: |
