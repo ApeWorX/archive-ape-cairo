@@ -8,3 +8,5 @@ dependencies:
 cairo:
   dependencies:
     - TestDependency
+
+  manifest: "~/cairo/Cargo.toml"
