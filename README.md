@@ -39,7 +39,9 @@ Both options require cloning the Cairo compiler source code:
 
 ```sh
 git clone git@github.com:starkware-libs/cairo.git
-cd cairo 
+cd cairo
+git fetch --all
+git checkout <tag>  # e.g. v1.0.0-alpha.6
 ```
 
 To do the first option, add the following to your `ape-config.yaml` file:
