@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Set, cast
+from typing import Dict, List, Optional, Set, Tuple, cast
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
@@ -58,7 +58,7 @@ class CairoCompiler(CompilerAPI):
         out_path: Path,
         replace_ids: bool = False,
         allow_libfuncs_list_name: Optional[str] = None,
-    ):
+    ) -> Tuple[str, str]:
         _bin = self._which(STARKNET_COMPILE)
         arguments = [*_bin, str(in_path), str(out_path)]
         if replace_ids:
@@ -67,7 +67,7 @@ class CairoCompiler(CompilerAPI):
             arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
 
         try:
-            self._compile(*arguments)
+            return self._compile(*arguments)
         except LockError:
             # Cairo stuck in weird state. Clean and re-try.
             if self.manifest_path is not None:
@@ -77,22 +77,19 @@ class CairoCompiler(CompilerAPI):
                         "Cairo stuck in locked state. Clearing debug target and retrying."
                     )
                     shutil.rmtree(self.manifest_path.parent / "target", ignore_errors=True)
-                    self._compile(*arguments)
-
-                    # Was successful if we get here.
-                    return
+                    return self._compile(*arguments)
 
             raise  # Original error
 
     def starknet_sierra_compile(
         self, in_path: Path, out_path: Path, allow_libfuncs_list_name: Optional[str] = None
-    ):
+    ) -> Tuple[str, str]:
         _bin = self._which(STARKNET_SIERRA_COMPILE)
         arguments = [*_bin, str(in_path), str(out_path)]
         if allow_libfuncs_list_name is not None:
             arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
 
-        self._compile(*arguments)
+        return self._compile(*arguments)
 
     def get_compiler_settings(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -222,14 +219,20 @@ class CairoCompiler(CompilerAPI):
             # Create Sierra contract classes.
             program_path = self.starknet_output_path / f"{contract_name}.json"
             program_path.unlink(missing_ok=True)
-            self.starknet_compile(
+            output, err = self.starknet_compile(
                 contract_path,
                 program_path,
                 replace_ids=True,
                 allow_libfuncs_list_name="experimental_v0.1.0",
             )
             if not program_path.is_file():
-                raise CompilerError(f"Failed to compile '{contract_path}'.")
+                message = f"Failed to compile '{contract_path}'."
+                if output:
+                    message = f"{message}\nStdout: {output}"
+                if err:
+                    message = f"{message}\nStderr: {err}"
+
+                raise CompilerError(message)
 
             # Create Compiled contract classes.
             casm_path = self.casm_output_path / f"{contract_name}.casm"
@@ -249,17 +252,17 @@ class CairoCompiler(CompilerAPI):
 
         return contract_types
 
-    def _compile(self, *args) -> bytes:
+    def _compile(self, *args) -> Tuple[str, str]:
         popen = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
         output, err = popen.communicate()
-        if err:
-            # Check for compiler error.
-            err_text = err.decode("utf8")
+        output_text = output.decode("utf8")
+        err_text = err.decode("utf8")
 
+        if err:
             # Raise `CompilerError` only if detect failure to compile.
             # This prevents falsely raising this error during warnings.
             if "Error: Compilation failed." in err_text:
@@ -271,7 +274,7 @@ class CairoCompiler(CompilerAPI):
             else:
                 logger.debug(err_text)
 
-        return output
+        return output_text, err_text
 
     def _which(self, bin_name: str) -> List[str]:
         if self.manifest_path is not None:
