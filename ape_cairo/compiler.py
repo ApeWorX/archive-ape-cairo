@@ -23,6 +23,11 @@ class CairoConfig(PluginConfig):
     manifest: Optional[str] = None
 
 
+class LockError(CompilerError):
+    def __init__(self):
+        super().__init__("Failed to compile. Cairo stuck in locked state.")
+
+
 class CairoCompiler(CompilerAPI):
     @property
     def name(self) -> str:
@@ -61,7 +66,23 @@ class CairoCompiler(CompilerAPI):
         if allow_libfuncs_list_name is not None:
             arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
 
-        self._compile(*arguments)
+        try:
+            self._compile(*arguments)
+        except LockError:
+            # Cairo stuck in weird state. Clean and re-try.
+            if self.manifest_path is not None:
+                target_path = self.manifest_path.parent / "target"
+                if target_path.is_dir():
+                    logger.warning(
+                        "Cairo stuck in locked state. Clearing debug target and retrying."
+                    )
+                    shutil.rmtree(self.manifest_path.parent / "target", ignore_errors=True)
+                    self._compile(*arguments)
+
+                    # Was successful if we get here.
+                    return
+
+            raise  # Original error
 
     def starknet_sierra_compile(
         self, in_path: Path, out_path: Path, allow_libfuncs_list_name: Optional[str] = None
@@ -243,6 +264,10 @@ class CairoCompiler(CompilerAPI):
             # This prevents falsely raising this error during warnings.
             if "Error: Compilation failed." in err_text:
                 raise CompilerError(f"Failed to compile contract. Full output:\n{err_text}.")
+
+            elif "Permission denied (os error 13)" in err_text:
+                raise LockError()
+
             else:
                 logger.debug(err_text)
 
