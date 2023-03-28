@@ -35,7 +35,7 @@ There are two ways to do this:
 1. Configure your Cairo manifest path in your `ape-config.yaml`.
 2. Build or add Cairo compiler binaries to your $PATH.
 
-Both options requires cloning the Cairo compiler source code:
+Both options require cloning the Cairo compiler source code:
 
 ```sh
 git clone git@github.com:starkware-libs/cairo.git
@@ -56,8 +56,9 @@ To do the second option instead, build the release binaries for your OS:
 cargo build --release
 ```
 
+**NOTE**: This requires being in the same directory as Cairo.
+
 After the build completes, add the target path to your global $PATH variable.
-**NOTE**: This requires being in the same directory as it when you build it in the Cairo package.
 (You may want to add this to your `.zshrc` / `.bashrc` file):
 
 ```sh
@@ -70,9 +71,14 @@ Verify you have `sierra-compile` in your `$PATH` by doing:
 which sierra-compile
 ```
 
-**WARN**: Note that when using Cairo-lang the python package, it will add binaries with the same name but that won't work.
-You will need to remove those manually if they are used instead of the binaries from Cairo 1.
-Alternatively, use the first approach.
+**WARN**: Note that when using Cairo-lang the python package, it will add conflicting binaries with the same name.
+You will need to ensure you are using the correct binaries if you have `cairo-lang` the Python package installed.
+
+```shell
+which starknet-compile
+```
+
+Alternatively, the first approach avoids this problem.
 
 ### Using the Compiler
 
