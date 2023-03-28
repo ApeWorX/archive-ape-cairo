@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Set, cast
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
+from ape.logging import logger
 from ape.utils import get_relative_path
 from eth_utils import to_hex
 from ethpm_types import ContractType, PackageManifest
@@ -242,6 +243,8 @@ class CairoCompiler(CompilerAPI):
             # This prevents falsely raising this error during warnings.
             if "Error: Compilation failed." in err_text:
                 raise CompilerError(f"Failed to compile contract. Full output:\n{err_text}.")
+            else:
+                logger.debug(err_text)
 
         return output
 

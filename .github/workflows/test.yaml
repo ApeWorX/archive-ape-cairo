@@ -86,7 +86,7 @@ jobs:
 
         - name: Clone Cairo
           run: |
-            git clone --depth 1 --single-branch https://github.com/starkware-libs/cairo.git tests/cairo
+            git clone https://github.com/starkware-libs/cairo.git tests/cairo
             pushd tests/cairo
             git fetch --tags
             git checkout ${{ env.CAIRO_VERSION }}
