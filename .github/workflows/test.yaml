@@ -65,6 +65,9 @@ jobs:
                 os: [ubuntu-latest, macos-latest]   # eventually add `windows-latest`
                 python-version: [3.8, 3.9]
 
+        env:
+          CAIRO_VERSION: v1.0.0-alpha.6
+
         steps:
         - uses: actions/checkout@v3
 
@@ -85,14 +88,18 @@ jobs:
           uses: actions/cache@v3
           with:
             path: $HOME/.local/bin
-            key: ${{ runner.os }}-geth-${{ env.GETH_VERSION }}
+            key: ${{ runner.os }}-geth-${{ env.CAIRO_VERSION }}
 
         - name: Clone Cairo
           if: steps.cache-cairo.outputs.cache-hit != 'true'
-          uses: actions/checkout@v3
+          run: |
+            git clone --depth 1 --single-branch https://github.com/starkware-libs/cairo.git
+            pushd cairo
+            git fetch --tags
+            git checkout ${{ env.CAIRO_VERSION }}
+            popd
           with:
-            repository: starkware-libs/cairo
-            ref: v1.0.0-alpha.6
+            github_token: ${{ secrets.GITHUB_TOKEN }}
 
         - name: Install Dependencies
           run: |
