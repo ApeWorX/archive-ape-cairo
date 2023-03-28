@@ -1,10 +1,10 @@
 import json
+import logging
 import os
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Set, cast
-import logging
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
@@ -234,7 +234,7 @@ class CairoCompiler(CompilerAPI):
         )
         output, err = popen.communicate()
         if err:
-            logging.warn(CompilerError(f"Failed to compile:\n{err.decode('utf8')}.")) 
+            logging.warn(CompilerError(f"Failed to compile:\n{err.decode('utf8')}."))
 
         return output
 
