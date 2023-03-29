@@ -32,8 +32,9 @@ def test_compile_individual_files(compiler, contract, project):
     compiler.compile([contract])
 
 
-def test_event_abi_migration(compiler, contract):
-    contract_type = compiler.compile([contract])[0]
+def test_event_abi_migration(compiler, project):
+    contract_with_event = project.contracts_folder / "storage.cairo"
+    contract_type = compiler.compile([contract_with_event])[0]
     event_abi = [abi for abi in contract_type.abi if abi.type == "event"][0]
     assert len(event_abi.inputs) == 1
     assert event_abi.inputs[0].name == "interface_id"
