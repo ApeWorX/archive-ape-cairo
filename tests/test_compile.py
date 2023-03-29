@@ -43,7 +43,7 @@ def test_event_abi_migration(compiler, contract):
 
 def get_expected_contract_type_name(contract_path: Path, base_path: Path) -> str:
     """
-    Converts paths like Path("path/to/base_dir/storage.cairo") -> "storage".
+    Converts paths like Path("path/to/base_dir/namespace/storage.cairo") -> "namespace.storage".
     """
     return (
         str(contract_path)
