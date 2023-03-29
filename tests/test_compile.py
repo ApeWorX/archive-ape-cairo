@@ -63,3 +63,9 @@ def test_dependency(project, compiler):
     # Tests against bug where would fail even though files are already in .cache and the
     # dependency manifest is not needed anymore.
     assert compiler.compile(source_files)
+
+
+def test_get_versions(compiler, project):
+    path = project.contracts_folder / "storage.cairo"
+    versions = compiler.get_versions([path])
+    assert versions == {"v1.0.0-alpha.6"}

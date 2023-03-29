@@ -11,7 +11,6 @@ from ape.logging import logger
 from ape.utils import get_relative_path
 from eth_utils import to_hex
 from ethpm_types import ContractType, PackageManifest
-from pkg_resources import get_distribution
 from semantic_version import Version  # type: ignore
 
 STARKNET_COMPILE = "starknet-compile"
@@ -23,9 +22,38 @@ class CairoConfig(PluginConfig):
     manifest: Optional[str] = None
 
 
-class LockError(CompilerError):
+class CompilerBrokenError(CompilerError):
     def __init__(self):
-        super().__init__("Failed to compile. Cairo stuck in locked state.")
+        super().__init__("Failed to compile. Cairo compiler corrupted.")
+
+
+def _communicate(*args) -> Tuple[bytes, bytes]:
+    popen = subprocess.Popen(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return popen.communicate()
+
+
+def _compile(*args) -> Tuple[str, str]:
+    output, err = _communicate(*args)
+    output_text = output.decode("utf8")
+    err_text = err.decode("utf8")
+
+    if err:
+        # Raise `CompilerError` only if detect failure to compile.
+        # This prevents falsely raising this error during warnings.
+        if "Error: Compilation failed." in err_text:
+            raise CompilerError(f"Failed to compile contract. Full output:\n{err_text}.")
+
+        elif "Permission denied (os error 13)" in err_text:
+            raise CompilerBrokenError()
+
+        else:
+            logger.debug(err_text)
+
+    return output_text, err_text
 
 
 class CairoCompiler(CompilerAPI):
@@ -67,8 +95,8 @@ class CairoCompiler(CompilerAPI):
             arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
 
         try:
-            return self._compile(*arguments)
-        except LockError:
+            return _compile(*arguments)
+        except CompilerBrokenError:
             # Cairo stuck in weird state. Clean and re-try.
             if self.manifest_path is not None:
                 target_path = self.manifest_path.parent / "target"
@@ -77,7 +105,7 @@ class CairoCompiler(CompilerAPI):
                         "Cairo stuck in locked state. Clearing debug target and retrying."
                     )
                     shutil.rmtree(self.manifest_path.parent / "target", ignore_errors=True)
-                    return self._compile(*arguments)
+                    return _compile(*arguments)
 
             raise  # Original error
 
@@ -89,7 +117,7 @@ class CairoCompiler(CompilerAPI):
         if allow_libfuncs_list_name is not None:
             arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
 
-        return self._compile(*arguments)
+        return _compile(*arguments)
 
     def get_compiler_settings(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -178,8 +206,10 @@ class CairoCompiler(CompilerAPI):
                     destination_path.write_text(source.content)
 
     def get_versions(self, all_paths: List[Path]) -> Set[str]:
-        # NOTE: Currently, we are not doing anything with versions.
-        return {get_distribution("eth-ape").version}
+        if not all_paths:
+            return set()
+
+        return {"v1.0.0-alpha.6"}
 
     def compile(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -251,30 +281,6 @@ class CairoCompiler(CompilerAPI):
             contract_types.append(contract_type)
 
         return contract_types
-
-    def _compile(self, *args) -> Tuple[str, str]:
-        popen = subprocess.Popen(
-            args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        output, err = popen.communicate()
-        output_text = output.decode("utf8")
-        err_text = err.decode("utf8")
-
-        if err:
-            # Raise `CompilerError` only if detect failure to compile.
-            # This prevents falsely raising this error during warnings.
-            if "Error: Compilation failed." in err_text:
-                raise CompilerError(f"Failed to compile contract. Full output:\n{err_text}.")
-
-            elif "Permission denied (os error 13)" in err_text:
-                raise LockError()
-
-            else:
-                logger.debug(err_text)
-
-        return output_text, err_text
 
     def _which(self, bin_name: str) -> List[str]:
         if self.manifest_path is not None:
