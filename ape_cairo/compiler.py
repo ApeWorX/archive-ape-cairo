@@ -50,6 +50,10 @@ def _compile(*args) -> Tuple[str, str]:
         elif "Permission denied (os error 13)" in err_text:
             raise CompilerBrokenError()
 
+        elif "Error: " in err_text:
+            err_message = err_text.split("Error: ")[1].strip()
+            raise CompilerError(err_message)
+
         else:
             logger.debug(err_text)
 
