@@ -27,6 +27,12 @@ class CompilerBrokenError(CompilerError):
         super().__init__("Failed to compile. Cairo compiler corrupted.")
 
 
+class ContractNotFoundError(CompilerError):
+    """
+    Raised when Cairo tells us a contract was not found during compilation.
+    """
+
+
 def _communicate(*args) -> Tuple[bytes, bytes]:
     popen = subprocess.Popen(
         args,
@@ -49,6 +55,9 @@ def _compile(*args) -> Tuple[str, str]:
 
         elif "Permission denied (os error 13)" in err_text:
             raise CompilerBrokenError()
+
+        elif "Error: Contract not found." in err_text:
+            raise ContractNotFoundError()
 
         elif "Error: " in err_text:
             err_message = err_text.split("Error: ")[1].strip()
@@ -100,6 +109,11 @@ class CairoCompiler(CompilerAPI):
 
         try:
             return _compile(*arguments)
+
+        except ContractNotFoundError:
+            # Raise with a better message.
+            raise ContractNotFoundError(f"Contract '{in_path}' not found.")
+
         except CompilerBrokenError:
             # Cairo stuck in weird state. Clean and re-try.
             if self.manifest_path is not None:
@@ -223,7 +237,18 @@ class CairoCompiler(CompilerAPI):
         # NOTE: still load dependencies even if no contacts in project.
         self.load_dependencies()
 
-        if not contract_filepaths:
+        # Filter out file paths that do not contains contracts.
+        contract_ids = ("#[contract]", "#[account_contract]")
+        paths = []
+        for path in list(contract_filepaths):
+            lines = path.read_text().splitlines()
+            for line in lines:
+                if any(c in line for c in contract_ids):
+                    # Contract found!
+                    paths.append(path)
+                    break
+
+        if not paths:
             return []
 
         contract_types: List[ContractType] = []
@@ -245,7 +270,7 @@ class CairoCompiler(CompilerAPI):
         self.casm_output_path.mkdir(parents=True, exist_ok=True)
 
         # search_paths = [base_path, *cached_paths_to_add]
-        for contract_path in contract_filepaths:
+        for contract_path in paths:
             # Store the raw Starknet artifact itself.
             source_id = str(get_relative_path(contract_path, base_path))
             contract_name = source_id.replace(os.path.sep, ".").replace(".cairo", "")
