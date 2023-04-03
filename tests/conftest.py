@@ -16,13 +16,14 @@ PROJECT_DIRECTORY = Path(__file__).parent
 SOURCE_CODE_DIRECTORY = PROJECT_DIRECTORY / "contracts"
 DEPENDENCY_DIRECTORY = PROJECT_DIRECTORY / "dependency"
 DEPENDENCY_SOURCE_CODE_DIRECTORY = DEPENDENCY_DIRECTORY / "src"
+NON_SOURCE_FILES = ("importme",)
 SOURCE_FILES = [
     p
     for p in [
         Path(str(p).replace(str(SOURCE_CODE_DIRECTORY), "").strip("/"))
         for p in get_all_files_in_directory(SOURCE_CODE_DIRECTORY)
     ]
-    if not str(p).startswith(".cache")
+    if not str(p).startswith(".cache") and p.stem not in NON_SOURCE_FILES
 ]
 
 

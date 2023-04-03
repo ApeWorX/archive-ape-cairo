@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 from tests.conftest import SOURCE_FILES
@@ -18,8 +17,7 @@ def test_compile_all_files(compiler, project):
     compiler.compile(source_files)
 
     # Make sure can actually use dot-access
-    assert project.namespace0.library
-    assert project.namespace1.library
+    assert project.storage
 
 
 def test_compile_individual_files(compiler, contract, project):
@@ -34,18 +32,18 @@ def test_compile_individual_files(compiler, contract, project):
 
 
 def test_event_abi_migration(compiler, project):
-    contract_with_event = project.contracts_folder / "openzeppelin" / "upgrades" / "library.cairo"
+    contract_with_event = project.contracts_folder / "storage.cairo"
     contract_type = compiler.compile([contract_with_event])[0]
     event_abi = [abi for abi in contract_type.abi if abi.type == "event"][0]
     assert len(event_abi.inputs) == 1
-    assert event_abi.inputs[0].name == "implementation"
-    assert event_abi.inputs[0].type == "felt"
+    assert event_abi.inputs[0].name == "interface_id"
+    assert event_abi.inputs[0].type == "core::felt252"
     assert not event_abi.inputs[0].indexed
 
 
 def get_expected_contract_type_name(contract_path: Path, base_path: Path) -> str:
     """
-    Converts paths like Path("path/to/base_dir/namespace/library.cairo") -> "namespace.library".
+    Converts paths like Path("path/to/base_dir/namespace/storage.cairo") -> "namespace.storage".
     """
     return (
         str(contract_path)
@@ -56,12 +54,7 @@ def get_expected_contract_type_name(contract_path: Path, base_path: Path) -> str
     )
 
 
-def test_dependency(project, compiler):
-    source_files = [project.contracts_folder / s for s in SOURCE_FILES]
-    compiler.compile(source_files)
-    dependency_path = project.config_manager.DATA_FOLDER / "packages" / "TestDependency"
-    shutil.rmtree(dependency_path)
-
-    # Tests against bug where would fail even though files are already in .cache and the
-    # dependency manifest is not needed anymore.
-    assert compiler.compile(source_files)
+def test_get_versions(compiler, project):
+    path = project.contracts_folder / "storage.cairo"
+    versions = compiler.get_versions([path])
+    assert versions == {"v1.0.0-alpha.6"}

@@ -1,27 +1,72 @@
+import json
+import os
+import shutil
+import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Set, cast
+from typing import Dict, List, Optional, Set, Tuple, cast
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
+from ape.logging import logger
 from ape.utils import get_relative_path
+from eth_utils import to_hex
 from ethpm_types import ContractType, PackageManifest
-from pkg_resources import get_distribution
 from semantic_version import Version  # type: ignore
-from starknet_py.compile.compiler import CairoFilename, starknet_compile  # type: ignore
-from starkware.starknet.services.api.contract_class import ContractClass  # type: ignore
 
-
-def _has_account_methods(contract_path: Path) -> bool:
-    content = Path(contract_path).read_text(encoding="utf-8")
-    lines = content.splitlines()
-    has_execute = any(line.startswith("func __execute__{") for line in lines)
-    has_validate = any(line.startswith("func __validate__{") for line in lines)
-    has_validate_execute = any(line.startswith("func __validate_declare__{") for line in lines)
-    return has_execute and has_validate and has_validate_execute
+STARKNET_COMPILE = "starknet-compile"
+STARKNET_SIERRA_COMPILE = "starknet-sierra-compile"
 
 
 class CairoConfig(PluginConfig):
     dependencies: List[str] = []
+    manifest: Optional[str] = None
+
+
+class CompilerBrokenError(CompilerError):
+    def __init__(self):
+        super().__init__("Failed to compile. Cairo compiler corrupted.")
+
+
+class ContractNotFoundError(CompilerError):
+    """
+    Raised when Cairo tells us a contract was not found during compilation.
+    """
+
+
+def _communicate(*args) -> Tuple[bytes, bytes]:
+    popen = subprocess.Popen(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return popen.communicate()
+
+
+def _compile(*args) -> Tuple[str, str]:
+    output, err = _communicate(*args)
+    output_text = output.decode("utf8")
+    err_text = err.decode("utf8")
+
+    if err:
+        # Raise `CompilerError` only if detect failure to compile.
+        # This prevents falsely raising this error during warnings.
+        if "Error: Compilation failed." in err_text:
+            raise CompilerError(f"Failed to compile contract. Full output:\n{err_text}.")
+
+        elif "Permission denied (os error 13)" in err_text:
+            raise CompilerBrokenError()
+
+        elif "Error: Contract not found." in err_text:
+            raise ContractNotFoundError()
+
+        elif "Error: " in err_text:
+            err_message = err_text.split("Error: ")[1].strip()
+            raise CompilerError(err_message)
+
+        else:
+            logger.debug(err_text)
+
+    return output_text, err_text
 
 
 class CairoCompiler(CompilerAPI):
@@ -30,8 +75,67 @@ class CairoCompiler(CompilerAPI):
         return "cairo"
 
     @property
+    def manifest_path(self) -> Optional[Path]:
+        if not self.config.manifest:
+            return None
+
+        return Path(self.config.manifest).expanduser().resolve()
+
+    @property
     def config(self) -> CairoConfig:
         return cast(CairoConfig, self.config_manager.get_config("cairo"))
+
+    @property
+    def starknet_output_path(self) -> Path:
+        return self.project_manager.local_project._cache_folder / "starknet"
+
+    @property
+    def casm_output_path(self) -> Path:
+        return self.starknet_output_path / "casm"
+
+    def starknet_compile(
+        self,
+        in_path: Path,
+        out_path: Path,
+        replace_ids: bool = False,
+        allow_libfuncs_list_name: Optional[str] = None,
+    ) -> Tuple[str, str]:
+        _bin = self._which(STARKNET_COMPILE)
+        arguments = [*_bin, str(in_path), str(out_path)]
+        if replace_ids:
+            arguments.append("--replace-ids")
+        if allow_libfuncs_list_name is not None:
+            arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
+
+        try:
+            return _compile(*arguments)
+
+        except ContractNotFoundError:
+            # Raise with a better message.
+            raise ContractNotFoundError(f"Contract '{in_path}' not found.")
+
+        except CompilerBrokenError:
+            # Cairo stuck in weird state. Clean and re-try.
+            if self.manifest_path is not None:
+                target_path = self.manifest_path.parent / "target"
+                if target_path.is_dir():
+                    logger.warning(
+                        "Cairo stuck in locked state. Clearing debug target and retrying."
+                    )
+                    shutil.rmtree(self.manifest_path.parent / "target", ignore_errors=True)
+                    return _compile(*arguments)
+
+            raise  # Original error
+
+    def starknet_sierra_compile(
+        self, in_path: Path, out_path: Path, allow_libfuncs_list_name: Optional[str] = None
+    ) -> Tuple[str, str]:
+        _bin = self._which(STARKNET_SIERRA_COMPILE)
+        arguments = [*_bin, str(in_path), str(out_path)]
+        if allow_libfuncs_list_name is not None:
+            arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
+
+        return _compile(*arguments)
 
     def get_compiler_settings(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -120,8 +224,10 @@ class CairoCompiler(CompilerAPI):
                     destination_path.write_text(source.content)
 
     def get_versions(self, all_paths: List[Path]) -> Set[str]:
-        # NOTE: Currently, we are not doing anything with versions.
-        return {get_distribution("cairo-lang").version}
+        if not all_paths:
+            return set()
+
+        return {"v1.0.0-alpha.6"}
 
     def compile(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -131,10 +237,21 @@ class CairoCompiler(CompilerAPI):
         # NOTE: still load dependencies even if no contacts in project.
         self.load_dependencies()
 
-        if not contract_filepaths:
+        # Filter out file paths that do not contains contracts.
+        contract_ids = ("#[contract]", "#[account_contract]")
+        paths = []
+        for path in list(contract_filepaths):
+            lines = path.read_text().splitlines()
+            for line in lines:
+                if any(c in line for c in contract_ids):
+                    # Contract found!
+                    paths.append(path)
+                    break
+
+        if not paths:
             return []
 
-        contract_types = []
+        contract_types: List[ContractType] = []
         base_cache_path = base_path / ".cache"
 
         cached_paths_to_add = []
@@ -148,35 +265,67 @@ class CairoCompiler(CompilerAPI):
                 [dependency_folder / p for p in dependency_folder.iterdir() if p.is_dir()]
             )
 
-        search_paths = [base_path, *cached_paths_to_add]
-        for contract_path in contract_filepaths:
-            try:
-                source = CairoFilename(str(contract_path))
-                is_account = _has_account_methods(contract_path)
-                result_str = starknet_compile(
-                    [source], search_paths=search_paths, is_account_contract=is_account
-                )
-            except ValueError as err:
-                raise CompilerError(f"Failed to compile '{contract_path.name}': {err}") from err
+        # Create all artifact directories (without assuming one is in another).
+        self.starknet_output_path.mkdir(parents=True, exist_ok=True)
+        self.casm_output_path.mkdir(parents=True, exist_ok=True)
 
-            definition = ContractClass.loads(result_str)
-
-            # Change events' 'data' field to 'inputs'
-            for abi in definition.abi:
-                if abi["type"] == "event" and "data" in abi:
-                    abi["inputs"] = abi.pop("data")
-
+        # search_paths = [base_path, *cached_paths_to_add]
+        for contract_path in paths:
+            # Store the raw Starknet artifact itself.
             source_id = str(get_relative_path(contract_path, base_path))
-            contract_name = source_id.replace(".cairo", "").replace("/", ".")
-            contract_type_data = {
-                "contractName": contract_name,
-                "sourceId": source_id,
-                "deploymentBytecode": {"bytecode": definition.serialize().hex()},
-                "runtimeBytecode": {},
-                "abi": definition.abi,
-            }
+            contract_name = source_id.replace(os.path.sep, ".").replace(".cairo", "")
 
-            contract_type = ContractType.parse_obj(contract_type_data)
+            # Create Sierra contract classes.
+            program_path = self.starknet_output_path / f"{contract_name}.json"
+            program_path.unlink(missing_ok=True)
+            output, err = self.starknet_compile(
+                contract_path,
+                program_path,
+                replace_ids=True,
+                allow_libfuncs_list_name="experimental_v0.1.0",
+            )
+            if not program_path.is_file():
+                message = f"Failed to compile '{contract_path}'."
+                if output:
+                    message = f"{message}\nStdout: {output}"
+                if err:
+                    message = f"{message}\nStderr: {err}"
+
+                raise CompilerError(message)
+
+            # Create Compiled contract classes.
+            casm_path = self.casm_output_path / f"{contract_name}.casm"
+            self.starknet_sierra_compile(
+                program_path, casm_path, allow_libfuncs_list_name="experimental_v0.1.0"
+            )
+
+            output_dict = json.loads(program_path.read_text())
+            contract_type = ContractType(
+                abi=output_dict["abi"],
+                contractName=contract_name,
+                sourceId=source_id,
+                runtimeBytecode={"bytecode": to_hex(text=program_path.read_text())},
+                deploymentBytecode={"bytecode": to_hex(text=str(casm_path.read_text()))},
+            )
             contract_types.append(contract_type)
 
         return contract_types
+
+    def _which(self, bin_name: str) -> List[str]:
+        if self.manifest_path is not None:
+            return [
+                "cargo",
+                "run",
+                "--bin",
+                bin_name,
+                "--manifest-path",
+                self.manifest_path.as_posix(),
+            ]
+
+        _bin = shutil.which(bin_name)
+        if not _bin:
+            raise CompilerError(
+                f"`{STARKNET_COMPILE}` binary required in $PATH prior to compiling."
+            )
+
+        return [_bin]

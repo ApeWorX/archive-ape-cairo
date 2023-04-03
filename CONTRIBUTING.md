@@ -47,3 +47,8 @@ If you are opening a work-in-progress pull request to verify that it passes CI t
 [marking it as a draft](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests#draft-pull-requests).
 
 Join the Ethereum Python [Discord](https://discord.gg/PcEJ54yX) if you have any questions.
+
+## Tests
+
+To run the tests, follow the README but use `tests/cairo` as your directory for cloning Cairo.
+This is so the `ape-config.yaml` can be easily used by both CI-CD and local environments.
