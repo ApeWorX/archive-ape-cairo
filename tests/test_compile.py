@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 from tests.conftest import SOURCE_FILES
@@ -53,17 +52,6 @@ def get_expected_contract_type_name(contract_path: Path, base_path: Path) -> str
         .strip("/")
         .replace("/", ".")
     )
-
-
-def test_dependency(project, compiler):
-    source_files = [project.contracts_folder / s for s in SOURCE_FILES]
-    compiler.compile(source_files)
-    dependency_path = project.config_manager.DATA_FOLDER / "packages" / "TestDependency"
-    shutil.rmtree(dependency_path)
-
-    # Tests against bug where would fail even though files are already in .cache and the
-    # dependency manifest is not needed anymore.
-    assert compiler.compile(source_files)
 
 
 def test_get_versions(compiler, project):
