@@ -304,8 +304,8 @@ class CairoCompiler(CompilerAPI):
                 abi=output_dict["abi"],
                 contractName=contract_name,
                 sourceId=source_id,
-                runtimeBytecode={"bytecode": to_hex(text=program_path.read_text())},
-                deploymentBytecode={"bytecode": to_hex(text=str(casm_path.read_text()))},
+                runtimeBytecode={"bytecode": to_hex(text=str(casm_path.read_text()))},
+                deploymentBytecode={"bytecode": to_hex(text=program_path.read_text())},
             )
             contract_types.append(contract_type)
 
