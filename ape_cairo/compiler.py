@@ -227,7 +227,7 @@ class CairoCompiler(CompilerAPI):
         if not all_paths:
             return set()
 
-        return {"v1.0.0-alpha.6"}
+        return {"v1.0.0-alpha.7"}
 
     def compile(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None

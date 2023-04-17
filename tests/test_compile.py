@@ -57,4 +57,4 @@ def get_expected_contract_type_name(contract_path: Path, base_path: Path) -> str
 def test_get_versions(compiler, project):
     path = project.contracts_folder / "storage.cairo"
     versions = compiler.get_versions([path])
-    assert versions == {"v1.0.0-alpha.6"}
+    assert versions == {"v1.0.0-alpha.7"}
