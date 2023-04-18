@@ -122,7 +122,7 @@ class CairoCompiler(CompilerAPI):
                     logger.warning(
                         "Cairo stuck in locked state. Clearing debug target and retrying."
                     )
-                    shutil.rmtree(self.manifest_path.parent / "target", ignore_errors=True)
+                    shutil.rmtree(target_path, ignore_errors=True)
                     return _compile(*arguments)
 
             raise  # Original error
@@ -131,7 +131,7 @@ class CairoCompiler(CompilerAPI):
         self, in_path: Path, out_path: Path, allow_libfuncs_list_name: Optional[str] = None
     ) -> Tuple[str, str]:
         _bin = self._which(STARKNET_SIERRA_COMPILE)
-        arguments = [*_bin, str(in_path), str(out_path)]
+        arguments = [*_bin, str(in_path), str(out_path), "--add-pythonic-hints"]
         if allow_libfuncs_list_name is not None:
             arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
 
