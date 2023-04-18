@@ -41,6 +41,13 @@ def test_event_abi_migration(compiler, project):
     assert not event_abi.inputs[0].indexed
 
 
+def test_constructor(compiler, project):
+    contract_with_event = project.contracts_folder / "storage.cairo"
+    contract_type = compiler.compile([contract_with_event])[0]
+    constructor = contract_type.constructor
+    assert len(constructor.inputs) == 1
+
+
 def get_expected_contract_type_name(contract_path: Path, base_path: Path) -> str:
     """
     Converts paths like Path("path/to/base_dir/namespace/storage.cairo") -> "namespace.storage".
@@ -57,4 +64,4 @@ def get_expected_contract_type_name(contract_path: Path, base_path: Path) -> str
 def test_get_versions(compiler, project):
     path = project.contracts_folder / "storage.cairo"
     versions = compiler.get_versions([path])
-    assert versions == {"v1.0.0-alpha.6"}
+    assert versions == {"v1.0.0-alpha.7"}

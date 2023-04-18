@@ -122,7 +122,7 @@ class CairoCompiler(CompilerAPI):
                     logger.warning(
                         "Cairo stuck in locked state. Clearing debug target and retrying."
                     )
-                    shutil.rmtree(self.manifest_path.parent / "target", ignore_errors=True)
+                    shutil.rmtree(target_path, ignore_errors=True)
                     return _compile(*arguments)
 
             raise  # Original error
@@ -131,7 +131,7 @@ class CairoCompiler(CompilerAPI):
         self, in_path: Path, out_path: Path, allow_libfuncs_list_name: Optional[str] = None
     ) -> Tuple[str, str]:
         _bin = self._which(STARKNET_SIERRA_COMPILE)
-        arguments = [*_bin, str(in_path), str(out_path)]
+        arguments = [*_bin, str(in_path), str(out_path), "--add-pythonic-hints"]
         if allow_libfuncs_list_name is not None:
             arguments.extend(("--allowed-libfuncs-list-name", allow_libfuncs_list_name))
 
@@ -227,7 +227,7 @@ class CairoCompiler(CompilerAPI):
         if not all_paths:
             return set()
 
-        return {"v1.0.0-alpha.6"}
+        return {"v1.0.0-alpha.7"}
 
     def compile(
         self, contract_filepaths: List[Path], base_path: Optional[Path] = None
@@ -300,12 +300,23 @@ class CairoCompiler(CompilerAPI):
             )
 
             output_dict = json.loads(program_path.read_text())
+
+            # Migrate ABIs to EthPM spec.
+            abis = []
+            for abi in output_dict["abi"]:
+                if abi["name"] == "constructor":
+                    # Constructor look like a normal method ABI in Cairo 1.
+                    abi["type"] = "constructor"
+                    del abi["name"]
+
+                abis.append(abi)
+
             contract_type = ContractType(
-                abi=output_dict["abi"],
+                abi=abis,
                 contractName=contract_name,
                 sourceId=source_id,
-                runtimeBytecode={"bytecode": to_hex(text=program_path.read_text())},
-                deploymentBytecode={"bytecode": to_hex(text=str(casm_path.read_text()))},
+                runtimeBytecode={"bytecode": to_hex(text=str(casm_path.read_text()))},
+                deploymentBytecode={"bytecode": to_hex(text=program_path.read_text())},
             )
             contract_types.append(contract_type)
 

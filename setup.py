@@ -10,7 +10,7 @@ extras_require = {
         "hypothesis>=6.70,<7.0",  # Strategy-based fuzzer
     ],
     "lint": [
-        "black>=22.12.0",  # auto-formatter and linter
+        "black>=23.3.0",  # auto-formatter and linter
         "mypy>=0.991,<1",  # Static type analyzer
         "types-setuptools",  # Needed due to mypy typeshed
         "flake8>=6.0.0,<7",  # Style linter
@@ -57,7 +57,7 @@ setup(
     url="https://github.com/ApeWorX/ape-cairo",
     include_package_data=True,
     install_requires=[
-        "eth-ape>=0.6.6,<0.7",
+        "eth-ape>=0.6.8,<0.7",
         "ethpm-types",  # Use same version as eth-ape
     ],
     python_requires=">=3.8,<3.11",
