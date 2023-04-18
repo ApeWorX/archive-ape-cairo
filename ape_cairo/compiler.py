@@ -300,8 +300,19 @@ class CairoCompiler(CompilerAPI):
             )
 
             output_dict = json.loads(program_path.read_text())
+
+            # Migrate ABIs to EthPM spec.
+            abis = []
+            for abi in output_dict["abi"]:
+                if abi["name"] == "constructor":
+                    # Constructor look like a normal method ABI in Cairo 1.
+                    abi["type"] = "constructor"
+                    del abi["name"]
+
+                abis.append(abi)
+
             contract_type = ContractType(
-                abi=output_dict["abi"],
+                abi=abis,
                 contractName=contract_name,
                 sourceId=source_id,
                 runtimeBytecode={"bytecode": to_hex(text=str(casm_path.read_text()))},
