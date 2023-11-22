@@ -10,14 +10,15 @@ extras_require = {
         "hypothesis>=6.70,<7.0",  # Strategy-based fuzzer
     ],
     "lint": [
-        "black>=23.11.0",  # Auto-formatter and linter
+        "black>=23.11.0,<24",  # Auto-formatter and linter
         "mypy>=1.7.0,<2",  # Static type analyzer
-        "types-setuptools",  # Needed due to mypy typeshed
+        "types-setuptools",  # Needed for mypy type shed
         "flake8>=6.1.0,<7",  # Style linter
         "isort>=5.10.1,<6",  # Import sorting linter
-        "mdformat>=0.7.17,<0.8",  # Auto-formatter for markdown
-        "mdformat-gfm>=0.3.5,<0.4",  # Needed for formatting GitHub-flavored markdown
-        "mdformat-frontmatter>=0.4.1,<0.5",  # Needed for headers in GH issue templates
+        "mdformat>=0.7.17",  # Auto-formatter for markdown
+        "mdformat-gfm>=0.3.5",  # Needed for formatting GitHub-flavored markdown
+        "mdformat-frontmatter>=0.4.1",  # Needed for frontmatters-style headers in issue templates
+        "mdformat-pyproject>=0.0.1",  # Allows configuring in pyproject.toml
     ],
     "release": [  # `release` GitHub Action job uses this
         "setuptools",  # Installation tool
