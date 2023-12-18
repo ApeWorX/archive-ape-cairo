@@ -60,7 +60,7 @@ setup(
         "eth-ape>=0.6.8,<0.7",
         "ethpm-types",  # Use same version as eth-ape
     ],
-    python_requires=">=3.8,<3.11",
+    python_requires=">=3.8,<4",
     extras_require=extras_require,
     py_modules=["ape_cairo"],
     license="Apache-2.0",
@@ -78,5 +78,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
 )
