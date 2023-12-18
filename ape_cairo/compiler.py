@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, cast
+from typing import Dict, List, Optional, Sequence, Set, Tuple, cast
 
 from ape.api import CompilerAPI, PluginConfig
 from ape.exceptions import CompilerError, ConfigError
@@ -11,7 +11,7 @@ from ape.logging import logger
 from ape.utils import get_relative_path
 from eth_utils import to_hex
 from ethpm_types import ContractType, PackageManifest
-from semantic_version import Version  # type: ignore
+from packaging.version import Version  # type: ignore
 
 STARKNET_COMPILE = "starknet-compile"
 STARKNET_SIERRA_COMPILE = "starknet-sierra-compile"
@@ -138,7 +138,7 @@ class CairoCompiler(CompilerAPI):
         return _compile(*arguments)
 
     def get_compiler_settings(
-        self, contract_filepaths: List[Path], base_path: Optional[Path] = None
+        self, contract_filepaths: Sequence[Path], base_path: Optional[Path] = None
     ) -> Dict[Version, Dict]:
         settings: Dict[Version, Dict] = {}
         for version in self.get_versions(contract_filepaths):
@@ -223,14 +223,14 @@ class CairoCompiler(CompilerAPI):
                     destination_path.touch()
                     destination_path.write_text(source.content)
 
-    def get_versions(self, all_paths: List[Path]) -> Set[str]:
+    def get_versions(self, all_paths: Sequence[Path]) -> Set[str]:
         if not all_paths:
             return set()
 
         return {"v1.0.0-alpha.7"}
 
     def compile(
-        self, contract_filepaths: List[Path], base_path: Optional[Path] = None
+        self, contract_filepaths: Sequence[Path], base_path: Optional[Path] = None
     ) -> List[ContractType]:
         base_path = base_path or self.project_manager.contracts_folder
 
